@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Service Timer</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f2f2f7;
+            min-height: 100vh;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+
+        .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .fake-header {
+            background: #007AFF;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fake-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .time-display {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .service-timeline {
+            padding: 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .service-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 3px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #e5e5ea;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .service-step:active {
+            transform: scale(0.98);
+            background: #e3f2fd;
+        }
+
+        .service-step.recorded {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .service-step.overdue {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .step-icon {
+            font-size: 18px;
+            margin-right: 8px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .step-name {
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .step-time-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+
+        .step-time {
+            font-size: 13px;
+            color: #666;
+            font-family: 'SF Mono', Monaco, monospace;
+            text-align: right;
+        }
+
+        .step-time.recorded {
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .step-gap {
+            font-size: 11px;
+            color: #999;
+            font-family: 'SF Mono', Monaco, monospace;
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .step-gap.long {
+            color: #e67e22;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .status-dot.recorded {
+            background: #28a745;
+        }
+
+        .timer-section {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e5e5ea;
+            text-align: center;
+        }
+
+        .elapsed-time {
+            font-size: 24px;
+            font-weight: 600;
+            color: #007AFF;
+            font-family: 'SF Mono', Monaco, monospace;
+            margin-bottom: 5px;
+        }
+
+        .session-info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .reset-section {
+            padding: 15px;
+            border-top: 1px solid #e5e5ea;
+        }
+
+        .reset-btn {
+            width: 100%;
+            background: #ff3b30;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:active {
+            transform: scale(0.95);
+            background: #d70015;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .reset-btn:hover {
+            background: #e6342a;
+        }
+
+        .export-btn {
+            width: 100%;
+            background: #34c759;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .export-btn:active {
+            transform: scale(0.95);
+            background: #248a3d;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .export-btn:hover {
+            background: #30a855;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #007AFF;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .vibrate-feedback {
+            animation: vibrate 0.1s;
+        }
+
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            75% { transform: translateX(1px); }
+        }
+
+        .notes-area {
+            padding: 15px;
+            border-top: 1px solid #e5e5ea;
+            background: #fafafa;
+        }
+
+        .note-input {
+            width: 100%;
+            border: 1px solid #e5e5ea;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            height: 60px;
+            background: white;
+        }
+
+        .note-input:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="fake-header">
+            <h1>🍽️ Service Timer</h1>
+            <div class="time-display" id="currentTime"></div>
+        </div>
+
+        <div class="timer-section">
+            <div class="elapsed-time" id="elapsedTime">00:00</div>
+            <div class="session-info">Tap items below to record timing</div>
+        </div>
+
+        <div class="summary-stats">
+            <div class="stat-box">
+                <div class="stat-number" id="completedCount">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="totalSteps">24</div>
+                <div class="stat-label">Total Steps</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="avgTime">--</div>
+                <div class="stat-label">Avg Gap</div>
+            </div>
+        </div>
+
+        <div class="service-timeline" id="timeline">
+            <div class="service-step" data-step="arrived">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🚪</span>
+                    <span class="step-name">Arrived</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="seated">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🪑</span>
+                    <span class="step-name">Seated</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="menu_offered">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">📋</span>
+                    <span class="step-name">Menu offered</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="drink_offered">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷</span>
+                    <span class="step-name">Drink offered</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="order_taken">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">📝</span>
+                    <span class="step-name">Order taken</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="drink_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷</span>
+                    <span class="step-name">First drink served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="amuse_bouche_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🧆</span>
+                    <span class="step-name">Amuse bouche served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="starter_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🥗</span>
+                    <span class="step-name">Starter served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="starter_finished">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🥗❌</span>
+                    <span class="step-name">Starter finished</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="starter_cleared">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🫴</span>
+                    <span class="step-name">Starter cleared</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="guest1_drink_finished">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷❌</span>
+                    <span class="step-name">First Guest - Drink 1 finished</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="guest2_drink_finished">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷❌</span>
+                    <span class="step-name">Second Guest - Drink 1 finished</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="guest1_second_drink_offered">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷2️⃣</span>
+                    <span class="step-name">First Guest - Second drink offered</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="guest2_second_drink_offered">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷2️⃣</span>
+                    <span class="step-name">Second Guest - Second drink offered</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="guest1_second_drink_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷</span>
+                    <span class="step-name">First Guest - Drink 2 served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="guest2_second_drink_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍷</span>
+                    <span class="step-name">Second Guest - Drink 2 served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="main_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🥘</span>
+                    <span class="step-name">Main course served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="main_finished">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍽️❌</span>
+                    <span class="step-name">Main course finished</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="main_cleared">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🫴</span>
+                    <span class="step-name">Main course cleared</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="dessert_offered">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🧁</span>
+                    <span class="step-name">Dessert offered / asked</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="dessert_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🍰</span>
+                    <span class="step-name">Dessert served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="coffee_offered">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">☕</span>
+                    <span class="step-name">Coffee offered / asked</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="coffee_served">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">☕</span>
+                    <span class="step-name">Coffee served</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="bill_asked">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">🧾</span>
+                    <span class="step-name">Bill asked</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+
+            <div class="service-step" data-step="bill_brought">
+                <div style="display: flex; align-items: center;">
+                    <div class="status-dot"></div>
+                    <span class="step-icon">💳</span>
+                    <span class="step-name">Bill brought</span>
+                </div>
+                <div class="step-time-container">
+                    <div class="step-time">--:--</div>
+                    <div class="step-gap"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-area">
+            <textarea class="note-input" placeholder="Additional notes..." id="noteInput"></textarea>
+        </div>
+
+        <div class="reset-section">
+            <button class="export-btn" onclick="exportTimings()">📤 Export Report</button>
+            <button class="reset-btn" onclick="resetSession()">🔄 New Session</button>
+        </div>
+    </div>
+
+    <script>
+        let sessionData = {
+            startTime: null,
+            timings: {},
+            notes: ''
+        };
+
+        let timerInterval;
+
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function updateElapsedTime() {
+            if (!sessionData.startTime) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - sessionData.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('elapsedTime').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function recordStep(stepKey) {
+            const now = new Date();
+            
+            // Initialize session if this is the first step
+            if (!sessionData.startTime) {
+                sessionData.startTime = now;
+                startTimer();
+            }
+            
+            sessionData.timings[stepKey] = now;
+            
+            // Update UI
+            const stepElement = document.querySelector(`[data-step="${stepKey}"]`);
+            const timeElement = stepElement.querySelector('.step-time');
+            const dotElement = stepElement.querySelector('.status-dot');
+            
+            // Show actual clock time
+            timeElement.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            timeElement.classList.add('recorded');
+            dotElement.classList.add('recorded');
+            stepElement.classList.add('recorded');
+            
+            // Calculate and display gap from previous step
+            updateStepGaps();
+            
+            // Vibration feedback
+            if (navigator.vibrate) {
+                navigator.vibrate(30);
+            }
+            
+            // Visual feedback
+            stepElement.classList.add('vibrate-feedback');
+            setTimeout(() => stepElement.classList.remove('vibrate-feedback'), 100);
+            
+            updateStats();
+        }
+
+        function updateStepGaps() {
+            // Clear all existing gaps
+            document.querySelectorAll('.step-gap').forEach(gap => {
+                gap.textContent = '';
+                gap.classList.remove('long');
+            });
+            
+            // Define specific step relationships to track
+            const stepRelationships = {
+                'menu_offered': 'seated',
+                'drink_offered': 'seated',
+                'drink_served': 'drink_offered',
+                'order_taken': 'menu_offered',
+                'starter_served': ['order_taken', 'amuse_bouche_served'], // Special case: check both
+                'starter_cleared': 'starter_finished',
+                'main_served': 'starter_cleared',
+                'main_cleared': 'main_finished',
+                'guest1_second_drink_offered': 'guest1_drink_finished',
+                'guest2_second_drink_offered': 'guest2_drink_finished',
+                'guest1_second_drink_served': 'guest1_second_drink_offered',
+                'guest2_second_drink_served': 'guest2_second_drink_offered',
+                'dessert_served': 'dessert_offered',
+                'coffee_served': 'coffee_offered',
+                'bill_brought': 'bill_asked'
+            };
+            
+            // Calculate specific step gaps
+            Object.entries(stepRelationships).forEach(([currentStep, previousStep]) => {
+                const currentTime = sessionData.timings[currentStep];
+                if (!currentTime) return;
+                
+                let previousTime = null;
+                
+                // Special case for starter_served - check both order_taken and amuse_bouche_served
+                if (Array.isArray(previousStep)) {
+                    // For starter, use amuse_bouche_served if available, otherwise order_taken
+                    previousTime = sessionData.timings['amuse_bouche_served'] || sessionData.timings['order_taken'];
+                } else {
+                    previousTime = sessionData.timings[previousStep];
+                }
+                
+                if (previousTime) {
+                    const gapSeconds = Math.floor((currentTime - previousTime) / 1000);
+                    const gapElement = document.querySelector(`[data-step="${currentStep}"] .step-gap`);
+                    
+                    if (gapElement) {
+                        if (gapSeconds >= 60) {
+                            const minutes = Math.floor(gapSeconds / 60);
+                            const seconds = gapSeconds % 60;
+                            gapElement.textContent = `${minutes}m ${seconds}s`;
+                        } else {
+                            gapElement.textContent = `${gapSeconds}s`;
+                        }
+                        
+                        // Highlight long gaps based on service type
+                        let longGapThreshold = 300; // 5 minutes default
+                        
+                        // Adjust thresholds for different service steps
+                        switch (currentStep) {
+                            case 'menu_offered':
+                                longGapThreshold = 120; // 2 minutes max after seating
+                                break;
+                            case 'drink_offered':
+                                longGapThreshold = 120; // 2 minutes max after seating
+                                break;
+                            case 'drink_served':
+                                longGapThreshold = 300; // 5 minutes max after drink order
+                                break;
+                            case 'order_taken':
+                                longGapThreshold = 600; // 10 minutes max to take order
+                                break;
+                            case 'starter_served':
+                                longGapThreshold = 900; // 15 minutes max for starter
+                                break;
+                            case 'starter_cleared':
+                                longGapThreshold = 300; // 5 minutes max to clear after finished
+                                break;
+                            case 'main_served':
+                                longGapThreshold = 1200; // 20 minutes max for main after starter cleared
+                                break;
+                            case 'main_cleared':
+                                longGapThreshold = 300; // 5 minutes max to clear after finished
+                                break;
+                            case 'guest1_second_drink_offered':
+                            case 'guest2_second_drink_offered':
+                                longGapThreshold = 180; // 3 minutes max to offer second drink
+                                break;
+                            case 'guest1_second_drink_served':
+                            case 'guest2_second_drink_served':
+                                longGapThreshold = 300; // 5 minutes max to serve second drink
+                                break;
+                            case 'dessert_served':
+                                longGapThreshold = 600; // 10 minutes max after dessert offered
+                                break;
+                            case 'coffee_served':
+                                longGapThreshold = 300; // 5 minutes max after coffee offered
+                                break;
+                            case 'bill_brought':
+                                longGapThreshold = 300; // 5 minutes max to bring bill after asked
+                                break;
+                        }
+                        
+                        if (gapSeconds > longGapThreshold) {
+                            gapElement.classList.add('long');
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStats() {
+            const completed = Object.keys(sessionData.timings).length;
+            document.getElementById('completedCount').textContent = completed;
+            
+            if (completed > 1) {
+                const times = Object.values(sessionData.timings).sort((a, b) => a - b);
+                let totalGaps = 0;
+                for (let i = 1; i < times.length; i++) {
+                    totalGaps += (times[i] - times[i-1]) / 1000;
+                }
+                const avgGap = Math.round(totalGaps / (times.length - 1));
+                document.getElementById('avgTime').textContent = `${avgGap}s`;
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(updateElapsedTime, 1000);
+        }
+
+        function resetSession() {
+            // Clear session data
+            sessionData = {
+                startTime: null,
+                timings: {},
+                notes: ''
+            };
+            
+            // Stop timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            // Reset all service steps
+            document.querySelectorAll('.service-step').forEach(step => {
+                step.classList.remove('recorded', 'overdue');
+                
+                const timeElement = step.querySelector('.step-time');
+                const dotElement = step.querySelector('.status-dot');
+                const gapElement = step.querySelector('.step-gap');
+                
+                if (timeElement) {
+                    timeElement.textContent = '--:--';
+                    timeElement.classList.remove('recorded');
+                }
+                
+                if (dotElement) {
+                    dotElement.classList.remove('recorded');
+                }
+                
+                if (gapElement) {
+                    gapElement.textContent = '';
+                    gapElement.classList.remove('long');
+                }
+            });
+            
+            // Reset display elements
+            document.getElementById('elapsedTime').textContent = '00:00';
+            document.getElementById('completedCount').textContent = '0';
+            document.getElementById('avgTime').textContent = '--';
+            document.getElementById('noteInput').value = '';
+        }
+
+        function exportTimings() {
+            if (Object.keys(sessionData.timings).length === 0) {
+                alert('No timings recorded yet!');
+                return;
+            }
+            
+            let report = 'Restaurant Service Timing Report\n';
+            report += '================================\n\n';
+            report += `Date: ${new Date().toLocaleDateString()}\n`;
+            report += `Start Time: ${sessionData.startTime.toLocaleTimeString()}\n`;
+            report += `Duration: ${document.getElementById('elapsedTime').textContent}\n\n`;
+            
+            report += 'Service Timings & Performance:\n';
+            report += '-----------------------------\n';
+            
+            const stepNames = {
+                'arrived': 'Arrived',
+                'seated': 'Seated',
+                'menu_offered': 'Menu offered',
+                'drink_offered': 'Drink offered',
+                'order_taken': 'Order taken',
+                'drink_served': 'First drink served',
+                'amuse_bouche_served': 'Amuse bouche served',
+                'starter_served': 'Starter served',
+                'starter_finished': 'Starter finished',
+                'starter_cleared': 'Starter cleared',
+                'guest1_drink_finished': 'First Guest - Drink 1 finished',
+                'guest2_drink_finished': 'Second Guest - Drink 1 finished',
+                'guest1_second_drink_offered': 'First Guest - Second drink offered',
+                'guest2_second_drink_offered': 'Second Guest - Second drink offered',
+                'guest1_second_drink_served': 'First Guest - Drink 2 served',
+                'guest2_second_drink_served': 'Second Guest - Drink 2 served',
+                'main_served': 'Main course served',
+                'main_finished': 'Main course finished',
+                'main_cleared': 'Main course cleared',
+                'dessert_offered': 'Dessert offered',
+                'dessert_served': 'Dessert served',
+                'coffee_offered': 'Coffee offered',
+                'coffee_served': 'Coffee served',
+                'bill_asked': 'Bill asked',
+                'bill_brought': 'Bill brought'
+            };
+            
+            // Sort timings by actual time
+            const sortedTimings = Object.entries(sessionData.timings)
+                .sort(([,a], [,b]) => a - b);
+            
+            sortedTimings.forEach(([step, time]) => {
+                const actualTime = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                report += `${actualTime} - ${stepNames[step] || step}\n`;
+            });
+            
+            // Add performance analysis
+            report += '\nPerformance Analysis:\n';
+            report += '--------------------\n';
+            
+            const stepRelationships = {
+                'menu_offered': { from: 'seated', label: 'Menu offered after seating', target: 120 },
+                'drink_offered': { from: 'seated', label: 'Drink offered after seating', target: 120 },
+                'drink_served': { from: 'drink_offered', label: 'First drink served after offered', target: 300 },
+                'order_taken': { from: 'menu_offered', label: 'Order taken after menu presented', target: 600 },
+                'starter_served': { from: ['order_taken', 'amuse_bouche_served'], label: 'Starter served after order/amuse bouche', target: 900 },
+                'starter_cleared': { from: 'starter_finished', label: 'Starter cleared after finished', target: 300 },
+                'main_served': { from: 'starter_cleared', label: 'Main served after starter cleared', target: 1200 },
+                'main_cleared': { from: 'main_finished', label: 'Main cleared after finished', target: 300 },
+                'guest1_second_drink_offered': { from: 'guest1_drink_finished', label: 'Guest 1 - Second drink offered after first finished', target: 180 },
+                'guest2_second_drink_offered': { from: 'guest2_drink_finished', label: 'Guest 2 - Second drink offered after first finished', target: 180 },
+                'guest1_second_drink_served': { from: 'guest1_second_drink_offered', label: 'Guest 1 - Second drink served after offered', target: 300 },
+                'guest2_second_drink_served': { from: 'guest2_second_drink_offered', label: 'Guest 2 - Second drink served after offered', target: 300 },
+                'dessert_served': { from: 'dessert_offered', label: 'Dessert served after offered', target: 600 },
+                'coffee_served': { from: 'coffee_offered', label: 'Coffee served after offered', target: 300 },
+                'bill_brought': { from: 'bill_asked', label: 'Bill brought after requested', target: 300 }
+            };
+            
+            Object.entries(stepRelationships).forEach(([currentStep, config]) => {
+                const currentTime = sessionData.timings[currentStep];
+                if (!currentTime) return;
+                
+                let previousTime = null;
+                
+                if (Array.isArray(config.from)) {
+                    // Special case for starter - use amuse_bouche_served if available, otherwise order_taken
+                    previousTime = sessionData.timings['amuse_bouche_served'] || sessionData.timings['order_taken'];
+                } else {
+                    previousTime = sessionData.timings[config.from];
+                }
+                
+                if (previousTime) {
+                    const gapSeconds = Math.floor((currentTime - previousTime) / 1000);
+                    const minutes = Math.floor(gapSeconds / 60);
+                    const seconds = gapSeconds % 60;
+                    const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                    
+                    const status = gapSeconds > config.target ? '⚠️  SLOW' : '✅ GOOD';
+                    report += `${config.label}: ${timeStr} ${status}\n`;
+                }
+            });
+            
+            const notes = document.getElementById('noteInput').value.trim();
+            if (notes) {
+                report += `\nNotes:\n------\n${notes}\n`;
+            }
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(report).then(() => {
+                alert('Report copied to clipboard!');
+            }).catch(() => {
+                // Fallback: create downloadable file
+                const blob = new Blob([report], {type: 'text/plain'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `service_timing_${new Date().toISOString().split('T')[0]}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Event listeners - simplified approach
+        document.addEventListener('click', (e) => {
+            const step = e.target.closest('.service-step');
+            if (step && !step.classList.contains('recorded')) {
+                const stepKey = step.dataset.step;
+                recordStep(stepKey);
+            }
+        });
+
+        document.getElementById('noteInput').addEventListener('input', (e) => {
+            sessionData.notes = e.target.value;
+        });
+
+        // Initialize
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
