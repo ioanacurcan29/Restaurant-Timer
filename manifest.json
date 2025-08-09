@@ -2,7 +2,7 @@
   "name": "Restaurant Service Timer",
   "short_name": "Service Timer",
   "description": "Professional restaurant service timing tracker",
-  "start_url": "/",
+  "start_url": "/Restaurant-Timer/",
   "display": "standalone",
   "background_color": "#f2f2f7",
   "theme_color": "#007AFF",
