@@ -736,7 +736,7 @@
                         // Adjust thresholds for different service steps
                         switch (currentStep) {
                             case 'menu_offered':
-                                longGapThreshold = 120; // 2 minutes max after seating
+                                longGapThreshold = 300; // 5 minutes max after seating
                                 break;
                             case 'drink_offered':
                                 longGapThreshold = 120; // 2 minutes max after seating
@@ -761,7 +761,7 @@
                                 break;
                             case 'guest1_second_drink_offered':
                             case 'guest2_second_drink_offered':
-                                longGapThreshold = 180; // 3 minutes max to offer second drink
+                                longGapThreshold = 120; // 2 minutes max to offer second drink
                                 break;
                             case 'guest1_second_drink_served':
                             case 'guest2_second_drink_served':
@@ -774,7 +774,7 @@
                                 longGapThreshold = 300; // 5 minutes max after coffee offered
                                 break;
                             case 'bill_brought':
-                                longGapThreshold = 300; // 5 minutes max to bring bill after asked
+                                longGapThreshold = 180; // 3 minutes max to bring bill after asked
                                 break;
                         }
                         
