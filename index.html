@@ -709,10 +709,9 @@
                 
                 let previousTime = null;
                 
-                // Special case for starter_served - check both order_taken and amuse_bouche_served
+                // Starter always timed from order_taken only
                 if (Array.isArray(previousStep)) {
-                    // For starter, use amuse_bouche_served if available, otherwise order_taken
-                    previousTime = sessionData.timings['amuse_bouche_served'] || sessionData.timings['order_taken'];
+                previousTime = sessionData.timings['order_taken'];
                 } else {
                     previousTime = sessionData.timings[previousStep];
                 }
