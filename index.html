@@ -1208,8 +1208,10 @@
         setInterval(updateCurrentTime, 1000);
         setupServiceType();
 
-        // Hide all toggle sections initially
-        document.getElementById('locationToggle').classList.add('hidden');
+        // Show location always, hide food/juice initially
+        document.getElementById('foodToggle').classList.add('hidden');
+        document.getElementById('drinkToggle').classList.add('hidden');
+        
         document.getElementById('foodToggle').classList.add('hidden');
         document.getElementById('drinkToggle').classList.add('hidden');
 
