@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Quality Monitor</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            min-height: 100vh;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+
+        .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .time-display {
+            font-size: 14px;
+            opacity: 0.9;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .setup-screen {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .setup-screen.hidden {
+            display: none;
+        }
+
+        .setup-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .setup-section {
+            margin-bottom: 25px;
+        }
+
+        .setup-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .setup-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .setup-btn {
+            padding: 12px 15px;
+            border: 2px solid #e5e5ea;
+            background: white;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #333;
+        }
+
+        .setup-btn.selected {
+            background: #000;
+            color: #FFD700;
+            border-color: #000;
+        }
+
+        .setup-btn:active {
+            transform: scale(0.95);
+        }
+
+        .toggle-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .toggle-options.hidden {
+            display: none;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: #FFD700;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .start-btn:active {
+            transform: scale(0.98);
+        }
+
+        .start-btn:disabled {
+            background: #ccc;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .timer-section {
+            padding: 15px;
+            background: #f8f9fa;
+            text-align: center;
+            display: none;
+        }
+
+        .timer-section.visible {
+            display: block;
+        }
+
+        .elapsed-time {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000;
+            font-family: 'SF Mono', Monaco, monospace;
+            margin-bottom: 5px;
+        }
+
+        .session-info {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .session-details {
+            font-size: 11px;
+            color: #888;
+            background: rgba(0,0,0,0.05);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .controls-section {
+            padding: 15px;
+            border-bottom: 1px solid #e5e5ea;
+            display: none;
+        }
+
+        .controls-section.visible {
+            display: block;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn.danger {
+            background: #ff3b30;
+            color: white;
+            border-color: #ff3b30;
+        }
+
+        .control-btn.success {
+            background: #34c759;
+            color: white;
+            border-color: #34c759;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 18px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .service-timeline {
+            padding: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .service-timeline.visible {
+            display: block;
+        }
+
+        .service-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 3px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #e5e5ea;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .service-step:active {
+            transform: scale(0.98);
+            background: #e3f2fd;
+        }
+
+        .service-step.recorded {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .service-step.overdue {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .step-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .status-dot.green { background: #4CAF50; }
+        .status-dot.blue { background: #2196F3; }
+        .status-dot.orange { background: #FF9800; }
+        .status-dot.purple { background: #9C27B0; }
+        .status-dot.red { background: #F44336; }
+        .status-dot.gray { background: #ccc; }
+
+        .status-dot.recorded {
+            background: #28a745 !important;
+        }
+
+        .step-name {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .step-time-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+
+        .step-time {
+            font-size: 13px;
+            color: #666;
+            font-family: 'SF Mono', Monaco, monospace;
+            text-align: right;
+        }
+
+        .step-time.recorded {
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .step-gap {
+            font-size: 11px;
+            color: #999;
+            font-family: 'SF Mono', Monaco, monospace;
+            text-align: right;
+            margin-top: 2px;
+        }
+
+        .step-gap.long {
+            color: #e67e22;
+            font-weight: 600;
+        }
+
+        .notes-area {
+            padding: 15px;
+            border-top: 1px solid #e5e5ea;
+            background: #fafafa;
+            display: none;
+        }
+
+        .notes-area.visible {
+            display: block;
+        }
+
+        .note-input {
+            width: 100%;
+            border: 1px solid #e5e5ea;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            height: 60px;
+            background: white;
+        }
+
+        .note-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .export-section {
+            padding: 15px;
+            border-top: 1px solid #e5e5ea;
+            display: none;
+        }
+
+        .export-section.visible {
+            display: block;
+        }
+
+        .export-btn {
+            width: 100%;
+            background: #34c759;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .export-btn:active {
+            transform: scale(0.95);
+            background: #248a3d;
+        }
+
+        .time-adjust-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            min-width: 300px;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .time-input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .popup-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .popup-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .popup-btn.cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .popup-btn.confirm {
+            background: #000;
+            color: #FFD700;
+        }
+
+        .confirm-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+        }
+
+        .confirm-dialog h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .confirm-dialog p {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Service Monitor</h1>
+            <div class="time-display" id="currentTime"></div>
+        </div>
+
+        <!-- Setup Screen -->
+        <div class="setup-screen" id="setupScreen">
+            <div class="setup-title">Service Setup</div>
+            
+            <div class="setup-section">
+                <div class="setup-label">Number of Guests</div>
+                <div class="setup-options">
+                    <button class="setup-btn" data-guests="1">1 Guest</button>
+                    <button class="setup-btn" data-guests="2">2+ Guests</button>
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <div class="setup-label">Service Type</div>
+                <div class="setup-options">
+                    <button class="setup-btn" data-service="drinks">Drinks Only</button>
+                    <button class="setup-btn" data-service="light">Light Meals</button>
+                    <button class="setup-btn" data-service="breakfast">Breakfast</button>
+                    <button class="setup-btn" data-service="lunch">Lunch</button>
+                    <button class="setup-btn" data-service="dinner">Dinner</button>
+                </div>
+            </div>
+
+            <!-- Location Toggle for Light Meals -->
+            <div class="setup-section" id="locationToggle">
+                <div class="setup-label">Location</div>
+                <div class="toggle-options">
+                    <button class="setup-btn" data-location="restaurant">Restaurant</button>
+                    <button class="setup-btn" data-location="beach">Beach/Poolside</button>
+                </div>
+            </div>
+
+            <!-- Food Type Toggle for Breakfast -->
+            <div class="setup-section" id="foodToggle">
+                <div class="setup-label">Food Type</div>
+                <div class="toggle-options">
+                    <button class="setup-btn" data-food="cold">Cold</button>
+                    <button class="setup-btn" data-food="hot">Hot</button>
+                </div>
+            </div>
+
+            <!-- Drink Type Toggle for Breakfast -->
+            <div class="setup-section" id="drinkToggle">
+                <div class="setup-label">Juice Type</div>
+                <div class="toggle-options">
+                    <button class="setup-btn" data-drink="regular">Regular</button>
+                    <button class="setup-btn" data-drink="fresh">Fresh</button>
+                </div>
+            </div>
+
+            <button class="start-btn" id="startServiceBtn" disabled>Start Service</button>
+        </div>
+
+        <!-- Active Service Screen -->
+        <div class="timer-section" id="timerSection">
+            <div class="elapsed-time" id="elapsedTime">00:00</div>
+            <div class="session-info">Tap to record • Hold to adjust time</div>
+            <div class="session-details" id="sessionDetails"></div>
+        </div>
+
+        <div class="controls-section" id="controlsSection">
+            <button class="control-btn success" onclick="endService()">End Service</button>
+            <button class="control-btn danger" onclick="confirmReset()">Reset</button>
+        </div>
+
+        <div class="summary-stats">
+            <div class="stat-box">
+                <div class="stat-number" id="completedCount">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="totalSteps">0</div>
+                <div class="stat-label">Total Steps</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="avgTime">--</div>
+                <div class="stat-label">Avg Gap</div>
+            </div>
+        </div>
+
+        <div class="service-timeline" id="timeline">
+            <!-- Steps will be dynamically generated -->
+        </div>
+
+        <div class="notes-area" id="notesArea">
+            <textarea class="note-input" placeholder="Quality notes and observations..." id="noteInput"></textarea>
+        </div>
+
+        <div class="export-section" id="exportSection">
+            <button class="export-btn" onclick="exportReport()">📤 Export Report</button>
+        </div>
+    </div>
+
+    <!-- Time Adjustment Popup -->
+    <div class="popup-overlay" id="popupOverlay"></div>
+    <div class="time-adjust-popup" id="timeAdjustPopup">
+        <h3>Adjust Time</h3>
+        <p>When did this actually happen?</p>
+        <div class="time-inputs">
+            <input type="number" class="time-input" id="hourInput" placeholder="HH" min="0" max="23">
+            <span>:</span>
+            <input type="number" class="time-input" id="minuteInput" placeholder="MM" min="0" max="59">
+        </div>
+        <div class="popup-buttons">
+            <button class="popup-btn cancel" onclick="closeTimeAdjust()">Cancel</button>
+            <button class="popup-btn confirm" onclick="confirmTimeAdjust()">Confirm</button>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div class="confirm-dialog" id="confirmDialog">
+        <h3>Reset Service?</h3>
+        <p>This will delete all recorded timing data. Are you sure?</p>
+        <div class="popup-buttons">
+            <button class="popup-btn cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="popup-btn confirm" onclick="resetService()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        let sessionData = {
+            startTime: null,
+            endTime: null,
+            timings: {},
+            notes: '',
+            config: {
+                guests: null,
+                service: null,
+                location: 'restaurant',
+                food: 'hot',
+                drink: 'regular'
+            }
+        };
+
+        let timerInterval;
+        let adjustingStep = null;
+
+        // Service configurations
+        const serviceConfigs = {
+            drinks: {
+                name: 'Drinks Service',
+                steps: [
+                    { key: 'greeted', name: 'Greeted/acknowledged', dot: 'green', target: 60 },
+                    { key: 'seated', name: 'Seated', dot: 'green', target: null },
+                    { key: 'drinks_ordered', name: 'Drinks order taken', dot: 'blue', target: 180, from: 'seated' },
+                    { key: 'drinks_served', name: 'Drinks served', dot: 'blue', target: 300, from: 'drinks_ordered' },
+                    { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'drinks_ordered' },
+                    { key: 'glass_empty', name: 'Glass empty', dot: 'gray', target: null },
+                    { key: 'additional_offered', name: 'Additional drink offered', dot: 'blue', target: 120, from: 'glass_empty' },
+                    { key: 'additional_served', name: 'Additional drink served', dot: 'blue', target: 300, from: 'additional_offered' },
+                    { key: 'additional_cocktail', name: 'Additional cocktail served', dot: 'blue', target: 480, from: 'additional_offered' },
+                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+            },
+            light: {
+                name: 'Light Meals',
+                steps: [
+                    { key: 'greeted', name: 'Greeted/acknowledged', dot: 'green', target: 60 }, // 300 for beach
+                    { key: 'menu_presented', name: 'Menu presented', dot: 'green', target: null },
+                    { key: 'order_taken', name: 'Food & beverage order taken', dot: 'orange', target: 300, from: 'menu_presented' },
+                    { key: 'drinks_served', name: 'Drinks served', dot: 'blue', target: 300, from: 'order_taken' },
+                    { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'order_taken' },
+                    { key: 'food_served', name: 'Food served', dot: 'orange', target: 900, from: 'order_taken' }, // 1200 for beach
+                    { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
+                    { key: 'additional_offered', name: 'Additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty' }, // 300 for beach
+                    { key: 'additional_served', name: 'Additional beverage served', dot: 'blue', target: 300, from: 'additional_offered' },
+                    { key: 'food_cleared', name: 'Food cleared', dot: 'red', target: 300, from: 'food_finished' },
+                    { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
+                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' }, // 900 for beach
+                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null }, // n/a for beach
+                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+            },
+            breakfast: {
+                name: 'Breakfast Service',
+                steps: [
+                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
+                    { key: 'menu_presented', name: 'Menu presented', dot: 'green', target: null },
+                    { key: 'beverages_offered', name: 'Coffee/tea/juice offered', dot: 'blue', target: 60, from: 'greeted_seated' },
+                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'blue', target: 300, from: 'beverages_offered' },
+                    { key: 'juice_served', name: 'Regular juice served', dot: 'blue', target: 300, from: 'beverages_offered' },
+                    { key: 'fresh_juice_served', name: 'Fresh juice served', dot: 'blue', target: 480, from: 'beverages_offered' },
+                    { key: 'food_ordered', name: 'Food order taken', dot: 'orange', target: null },
+                    { key: 'cold_breakfast', name: 'Cold breakfast served', dot: 'orange', target: 420, from: 'food_ordered' },
+                    { key: 'hot_breakfast', name: 'Hot breakfast served', dot: 'orange', target: 600, from: 'food_ordered' },
+                    { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
+                    { key: 'dishes_cleared', name: 'Dishes cleared', dot: 'red', target: 300, from: 'breakfast_finished' },
+                    { key: 'refill_offered', name: 'Beverage refill offered', dot: 'blue', target: 120, from: 'beverage_empty' },
+                    { key: 'refill_served', name: 'Beverage refill served', dot: 'blue', target: 300, from: 'refill_offered' },
+                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+            },
+            lunch: {
+                name: 'Lunch Service',
+                steps: [
+                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
+                    { key: 'menu_presented', name: 'Menu/wine list presented', dot: 'green', target: 300, from: 'greeted_seated' },
+                    { key: 'premeal_offered', name: 'Pre-meal drink offered', dot: 'blue', target: 60, from: 'greeted_seated' },
+                    { key: 'premeal_served', name: 'Pre-meal drinks served', dot: 'blue', target: 300, from: 'premeal_offered' },
+                    { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'premeal_offered' },
+                    { key: 'water_offered', name: 'Water offered and served', dot: 'blue', target: null },
+                    { key: 'order_taken', name: 'Food order taken', dot: 'orange', target: 600, from: 'menu_presented' },
+                    { key: 'bread_served', name: 'Bread/rolls served', dot: 'orange', target: null },
+                    { key: 'wine_served', name: 'Wine ordered and served', dot: 'blue', target: 300, from: 'wine_ordered' },
+                    { key: 'starter_served', name: 'Starter served', dot: 'orange', target: 900, from: 'order_taken' },
+                    { key: 'starter_cleared', name: 'Starter cleared', dot: 'red', target: 300, from: 'starter_finished' },
+                    { key: 'main_served', name: 'Main course served', dot: 'orange', target: 1200, from: 'starter_cleared' },
+                    { key: 'main_cleared', name: 'Main course cleared', dot: 'red', target: 300, from: 'main_finished' },
+                    { key: 'table_crumbed', name: 'Table crumbed down', dot: 'red', target: null },
+                    { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
+                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
+                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
+                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
+                    { key: 'additional_offered', name: 'Additional beverages offered', dot: 'blue', target: 120, from: 'beverage_empty' },
+                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+            }
+        };
+
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function updateElapsedTime() {
+            if (!sessionData.startTime) return;
+            
+            const now = sessionData.endTime || new Date();
+            const elapsed = Math.floor((now - sessionData.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('elapsedTime').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function setupServiceType() {
+            const setupBtns = document.querySelectorAll('.setup-btn');
+            const startBtn = document.getElementById('startServiceBtn');
+            const locationToggle = document.getElementById('locationToggle');
+            const foodToggle = document.getElementById('foodToggle');
+            const drinkToggle = document.getElementById('drinkToggle');
+
+            setupBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const guests = btn.dataset.guests;
+                    const service = btn.dataset.service;
+                    const location = btn.dataset.location;
+                    const food = btn.dataset.food;
+                    const drink = btn.dataset.drink;
+
+                    if (guests) {
+                        document.querySelectorAll('[data-guests]').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        sessionData.config.guests = parseInt(guests);
+                    }
+
+                    if (service) {
+                        document.querySelectorAll('[data-service]').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        sessionData.config.service = service;
+
+                        // Show/hide toggles based on service type
+                        locationToggle.classList.toggle('hidden', service !== 'light');
+                        foodToggle.classList.toggle('hidden', service !== 'breakfast');
+                        drinkToggle.classList.toggle('hidden', service !== 'breakfast');
+
+                        // Reset toggle selections
+                        if (service === 'light') {
+                            document.querySelector('[data-location="restaurant"]').classList.add('selected');
+                            sessionData.config.location = 'restaurant';
+                        }
+                        if (service === 'breakfast') {
+                            document.querySelector('[data-food="hot"]').classList.add('selected');
+                            document.querySelector('[data-drink="regular"]').classList.add('selected');
+                            sessionData.config.food = 'hot';
+                            sessionData.config.drink = 'regular';
+                        }
+                    }
+
+                    if (location) {
+                        document.querySelectorAll('[data-location]').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        sessionData.config.location = location;
+                    }
+
+                    if (food) {
+                        document.querySelectorAll('[data-food]').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        sessionData.config.food = food;
+                    }
+
+                    if (drink) {
+                        document.querySelectorAll('[data-drink]').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        sessionData.config.drink = drink;
+                    }
+
+                    // Enable start button if basic config is set
+                    startBtn.disabled = !(sessionData.config.guests && sessionData.config.service);
+                });
+            });
+
+            startBtn.addEventListener('click', startService);
+        }
+
+        function startService() {
+            sessionData.startTime = new Date();
+            sessionData.timings = {};
+            sessionData.notes = '';
+
+            // Hide setup screen
+            document.getElementById('setupScreen').classList.add('hidden');
+            
+            // Show service screens
+            document.getElementById('timerSection').classList.add('visible');
+            document.getElementById('controlsSection').classList.add('visible');
+            document.getElementById('timeline').classList.add('visible');
+            document.getElementById('notesArea').classList.add('visible');
+            document.getElementById('exportSection').classList.add('visible');
+
+            // Generate timeline
+            generateTimeline();
+            updateSessionDetails();
+            
+            // Start timer
+            timerInterval = setInterval(updateElapsedTime, 1000);
+        }
+
+        function generateTimeline() {
+            const config = sessionData.config;
+            const serviceConfig = serviceConfigs[config.service];
+            const timeline = document.getElementById('timeline');
+            
+            timeline.innerHTML = '';
+            
+            let steps = [...serviceConfig.steps];
+            
+            // Filter steps based on configuration
+            steps = steps.filter(step => {
+                // Hide guest 2 steps if only 1 guest
+                if (config.guests === 1 && step.key.includes('guest2')) {
+                    return false;
+                }
+                
+                // Hide breakfast food type not selected
+                if (config.service === 'breakfast') {
+                    if (config.food === 'cold' && step.key === 'hot_breakfast') return false;
+                    if (config.food === 'hot' && step.key === 'cold_breakfast') return false;
+                    if (config.drink === 'regular' && step.key === 'fresh_juice_served') return false;
+                    if (config.drink === 'fresh' && step.key === 'juice_served') return false;
+                }
+
+                // Hide cocktail steps if not relevant
+                if (!step.key.includes('cocktail') || config.service === 'drinks' || config.service === 'light' || config.service === 'breakfast') {
+                    return true;
+                }
+                
+                return true;
+            });
+
+            steps.forEach(step => {
+                const stepElement = document.createElement('div');
+                stepElement.className = 'service-step';
+                stepElement.dataset.step = step.key;
+                
+                stepElement.innerHTML = `
+                    <div class="step-left">
+                        <div class="status-dot ${step.dot}"></div>
+                        <span class="step-name">${step.name}</span>
+                    </div>
+                    <div class="step-time-container">
+                        <div class="step-time">--:--</div>
+                        <div class="step-gap"></div>
+                    </div>
+                `;
+                
+                timeline.appendChild(stepElement);
+            });
+
+            // Update total steps count
+            document.getElementById('totalSteps').textContent = steps.length;
+
+            // Add event listeners
+            addStepListeners();
+        }
+
+        function addStepListeners() {
+            document.querySelectorAll('.service-step').forEach(step => {
+                step.addEventListener('click', (e) => {
+                    if (!step.classList.contains('recorded')) {
+                        recordStep(step.dataset.step);
+                    }
+                });
+
+                step.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if (step.classList.contains('recorded')) {
+                        openTimeAdjust(step.dataset.step);
+                    }
+                });
+
+                // Touch and hold for mobile
+                let holdTimer;
+                step.addEventListener('touchstart', (e) => {
+                    holdTimer = setTimeout(() => {
+                        if (step.classList.contains('recorded')) {
+                            e.preventDefault();
+                            openTimeAdjust(step.dataset.step);
+                        }
+                    }, 800);
+                });
+
+                step.addEventListener('touchend', () => {
+                    clearTimeout(holdTimer);
+                });
+            });
+        }
+
+        function recordStep(stepKey) {
+            const now = new Date();
+            sessionData.timings[stepKey] = now;
+            
+            // Update UI
+            const stepElement = document.querySelector(`[data-step="${stepKey}"]`);
+            const timeElement = stepElement.querySelector('.step-time');
+            const dotElement = stepElement.querySelector('.status-dot');
+            
+            timeElement.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            timeElement.classList.add('recorded');
+            dotElement.classList.add('recorded');
+            stepElement.classList.add('recorded');
+            
+            updateStepGaps();
+            updateStats();
+            
+            // Haptic feedback
+            if (navigator.vibrate) {
+                navigator.vibrate(30);
+            }
+        }
+
+        function updateStepGaps() {
+            const config = sessionData.config;
+            const serviceConfig = serviceConfigs[config.service];
+            
+            serviceConfig.steps.forEach(step => {
+                if (!step.from || !sessionData.timings[step.key]) return;
+                
+                const currentTime = sessionData.timings[step.key];
+                const previousTime = sessionData.timings[step.from];
+                
+                if (previousTime) {
+                    const gapSeconds = Math.floor((currentTime - previousTime) / 1000);
+                    const gapElement = document.querySelector(`[data-step="${step.key}"] .step-gap`);
+                    
+                    if (gapElement) {
+                        if (gapSeconds >= 60) {
+                            const minutes = Math.floor(gapSeconds / 60);
+                            const seconds = gapSeconds % 60;
+                            gapElement.textContent = `${minutes}m ${seconds}s`;
+                        } else {
+                            gapElement.textContent = `${gapSeconds}s`;
+                        }
+                        
+                        // Adjust target for location/type
+                        let target = step.target;
+                        if (config.service === 'light' && config.location === 'beach') {
+                            if (step.key === 'greeted') target = 300;
+                            if (step.key === 'food_served') target = 1200;
+                            if (step.key === 'additional_offered') target = 300;
+                            if (step.key === 'dessert_served') target = 900;
+                        }
+                        
+                        if (target && gapSeconds > target) {
+                            gapElement.classList.add('long');
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStats() {
+            const completed = Object.keys(sessionData.timings).length;
+            document.getElementById('completedCount').textContent = completed;
+            
+            if (completed > 1) {
+                const times = Object.values(sessionData.timings).sort((a, b) => a - b);
+                let totalGaps = 0;
+                for (let i = 1; i < times.length; i++) {
+                    totalGaps += (times[i] - times[i-1]) / 1000;
+                }
+                const avgGap = Math.round(totalGaps / (times.length - 1));
+                document.getElementById('avgTime').textContent = `${avgGap}s`;
+            }
+        }
+
+        function updateSessionDetails() {
+            const config = sessionData.config;
+            const serviceConfig = serviceConfigs[config.service];
+            let details = `${config.guests} guest${config.guests > 1 ? 's' : ''} • ${serviceConfig.name}`;
+            
+            if (config.service === 'light') {
+                details += ` • ${config.location}`;
+            }
+            if (config.service === 'breakfast') {
+                details += ` • ${config.food} food, ${config.drink} juice`;
+            }
+            
+            document.getElementById('sessionDetails').textContent = details;
+        }
+
+        function openTimeAdjust(stepKey) {
+            adjustingStep = stepKey;
+            const currentTime = sessionData.timings[stepKey];
+            
+            document.getElementById('hourInput').value = currentTime.getHours().toString().padStart(2, '0');
+            document.getElementById('minuteInput').value = currentTime.getMinutes().toString().padStart(2, '0');
+            
+            document.getElementById('popupOverlay').style.display = 'block';
+            document.getElementById('timeAdjustPopup').style.display = 'block';
+        }
+
+        function closeTimeAdjust() {
+            document.getElementById('popupOverlay').style.display = 'none';
+            document.getElementById('timeAdjustPopup').style.display = 'none';
+            adjustingStep = null;
+        }
+
+        function confirmTimeAdjust() {
+            const hour = parseInt(document.getElementById('hourInput').value);
+            const minute = parseInt(document.getElementById('minuteInput').value);
+            
+            if (isNaN(hour) || isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+                alert('Please enter valid time values');
+                return;
+            }
+            
+            const newTime = new Date(sessionData.timings[adjustingStep]);
+            newTime.setHours(hour, minute, 0, 0);
+            
+            sessionData.timings[adjustingStep] = newTime;
+            
+            // Update display
+            const stepElement = document.querySelector(`[data-step="${adjustingStep}"]`);
+            const timeElement = stepElement.querySelector('.step-time');
+            timeElement.textContent = newTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            updateStepGaps();
+            closeTimeAdjust();
+        }
+
+        function confirmReset() {
+            document.getElementById('popupOverlay').style.display = 'block';
+            document.getElementById('confirmDialog').style.display = 'block';
+        }
+
+        function closeConfirm() {
+            document.getElementById('popupOverlay').style.display = 'none';
+            document.getElementById('confirmDialog').style.display = 'none';
+        }
+
+        function resetService() {
+            closeConfirm();
+            
+            // Clear timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            // Reset data
+            sessionData = {
+                startTime: null,
+                endTime: null,
+                timings: {},
+                notes: '',
+                config: {
+                    guests: null,
+                    service: null,
+                    location: 'restaurant',
+                    food: 'hot',
+                    drink: 'regular'
+                }
+            };
+            
+            // Show setup screen
+            document.getElementById('setupScreen').classList.remove('hidden');
+            document.getElementById('timerSection').classList.remove('visible');
+            document.getElementById('controlsSection').classList.remove('visible');
+            document.getElementById('timeline').classList.remove('visible');
+            document.getElementById('notesArea').classList.remove('visible');
+            document.getElementById('exportSection').classList.remove('visible');
+            
+            // Reset setup
+            document.querySelectorAll('.setup-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('startServiceBtn').disabled = true;
+            document.getElementById('locationToggle').classList.add('hidden');
+            document.getElementById('foodToggle').classList.add('hidden');
+            document.getElementById('drinkToggle').classList.add('hidden');
+        }
+
+        function endService() {
+            sessionData.endTime = new Date();
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            updateElapsedTime();
+            
+            // Update UI to show service ended
+            document.querySelector('.session-info').textContent = 'Service completed • Tap Export to save report';
+            document.querySelector('.control-btn.success').textContent = 'Service Ended';
+            document.querySelector('.control-btn.success').disabled = true;
+        }
+
+        function exportReport() {
+            if (Object.keys(sessionData.timings).length === 0) {
+                alert('No timing data recorded yet!');
+                return;
+            }
+            
+            const config = sessionData.config;
+            const serviceConfig = serviceConfigs[config.service];
+            
+            let report = 'Service Quality Assessment Report\n';
+            report += '==================================\n\n';
+            report += `Date: ${new Date().toLocaleDateString()}\n`;
+            report += `Service Type: ${serviceConfig.name}\n`;
+            report += `Guests: ${config.guests}\n`;
+            if (config.service === 'light') report += `Location: ${config.location}\n`;
+            if (config.service === 'breakfast') report += `Food: ${config.food}, Juice: ${config.drink}\n`;
+            report += `Start Time: ${sessionData.startTime.toLocaleTimeString()}\n`;
+            if (sessionData.endTime) report += `End Time: ${sessionData.endTime.toLocaleTimeString()}\n`;
+            report += `Duration: ${document.getElementById('elapsedTime').textContent}\n\n`;
+            
+            report += 'Service Timeline:\n';
+            report += '----------------\n';
+            
+            const sortedTimings = Object.entries(sessionData.timings)
+                .sort(([,a], [,b]) => a - b);
+            
+            sortedTimings.forEach(([stepKey, time]) => {
+                const step = serviceConfig.steps.find(s => s.key === stepKey);
+                const stepName = step ? step.name : stepKey;
+                const actualTime = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                report += `${actualTime} - ${stepName}\n`;
+            });
+            
+            report += '\nPerformance Analysis:\n';
+            report += '--------------------\n';
+            
+            serviceConfig.steps.forEach(step => {
+                if (!step.from || !sessionData.timings[step.key]) return;
+                
+                const currentTime = sessionData.timings[step.key];
+                const previousTime = sessionData.timings[step.from];
+                
+                if (previousTime) {
+                    const gapSeconds = Math.floor((currentTime - previousTime) / 1000);
+                    const minutes = Math.floor(gapSeconds / 60);
+                    const seconds = gapSeconds % 60;
+                    const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                    
+                    let target = step.target;
+                    if (config.service === 'light' && config.location === 'beach') {
+                        if (step.key === 'greeted') target = 300;
+                        if (step.key === 'food_served') target = 1200;
+                        if (step.key === 'additional_offered') target = 300;
+                        if (step.key === 'dessert_served') target = 900;
+                    }
+                    
+                    const status = target && gapSeconds > target ? '⚠️  SLOW' : '✅ GOOD';
+                    report += `${step.name}: ${timeStr} ${status}\n`;
+                }
+            });
+            
+            const notes = document.getElementById('noteInput').value.trim();
+            if (notes) {
+                report += `\nQuality Notes:\n--------------\n${notes}\n`;
+            }
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(report).then(() => {
+                alert('Report copied to clipboard!');
+            }).catch(() => {
+                // Fallback: create downloadable file
+                const blob = new Blob([report], {type: 'text/plain'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `service_assessment_${new Date().toISOString().split('T')[0]}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Initialize
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+        setupServiceType();
+
+        // Hide all toggle sections initially
+        document.getElementById('locationToggle').classList.add('hidden');
+        document.getElementById('foodToggle').classList.add('hidden');
+        document.getElementById('drinkToggle').classList.add('hidden');
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html> 'starter_finished' },
+                    { key: 'main_served', name: 'Main course served', dot: 'orange', target: 1200, from: 'starter_cleared' },
+                    { key: 'main_cleared', name: 'Main course cleared', dot: 'red', target: 300, from: 'main_finished' },
+                    { key: 'table_crumbed', name: 'Table crumbed down', dot: 'red', target: null },
+                    { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
+                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
+                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
+                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
+                    { key: 'additional_offered', name: 'Additional beverages offered', dot: 'blue', target: 120, from: 'beverage_empty' },
+                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+            },
+            dinner: {
+                name: 'Restaurant Dining',
+                steps: [
+                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
+                    { key: 'menu_presented', name: 'Menu/wine list presented', dot: 'green', target: 300, from: 'greeted_seated' },
+                    { key: 'premeal_offered', name: 'Pre-meal drink offered', dot: 'blue', target: 60, from: 'greeted_seated' },
+                    { key: 'premeal_served', name: 'Pre-meal drinks served', dot: 'blue', target: 300, from: 'premeal_offered' },
+                    { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'premeal_offered' },
+                    { key: 'water_offered', name: 'Water offered and served', dot: 'blue', target: null },
+                    { key: 'order_taken', name: 'Food order taken', dot: 'orange', target: 600, from: 'menu_presented' },
+                    { key: 'bread_served', name: 'Bread/rolls served', dot: 'orange', target: null },
+                    { key: 'wine_served', name: 'Wine ordered and served', dot: 'blue', target: 300, from: 'wine_ordered' },
+                    { key: 'starter_served', name: 'Starter served', dot: 'orange', target: 900, from: 'order_taken' },
+                    { key: 'starter_cleared', name: 'Starter cleared', dot: 'red', target: 300, from:
