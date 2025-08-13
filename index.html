@@ -74,6 +74,10 @@
             margin-bottom: 25px;
         }
 
+        .setup-section.hidden {
+            display: none;
+        }
+
         .setup-label {
             font-size: 16px;
             font-weight: 500;
@@ -115,10 +119,6 @@
             gap: 10px;
             justify-content: center;
             margin-top: 10px;
-        }
-
-        .toggle-options.hidden {
-            display: none;
         }
 
         .start-btn {
@@ -522,17 +522,19 @@
                 </div>
             </div>
 
-            <!-- Location Toggle for Light Meals -->
+            <!-- Location Selection (Always Visible) -->
             <div class="setup-section" id="locationToggle">
                 <div class="setup-label">Location</div>
-                <div class="toggle-options">
+                <div class="setup-options">
+                    <button class="setup-btn" data-location="bar">Bar</button>
                     <button class="setup-btn" data-location="restaurant">Restaurant</button>
-                    <button class="setup-btn" data-location="beach">Beach/Poolside</button>
+                    <button class="setup-btn" data-location="beach">Beach</button>
+                    <button class="setup-btn" data-location="poolside">Poolside</button>
                 </div>
             </div>
 
             <!-- Food Type Toggle for Breakfast -->
-            <div class="setup-section" id="foodToggle">
+            <div class="setup-section hidden" id="foodToggle">
                 <div class="setup-label">Food Type</div>
                 <div class="toggle-options">
                     <button class="setup-btn" data-food="cold">Cold</button>
@@ -541,7 +543,7 @@
             </div>
 
             <!-- Drink Type Toggle for Breakfast -->
-            <div class="setup-section" id="drinkToggle">
+            <div class="setup-section hidden" id="drinkToggle">
                 <div class="setup-label">Juice Type</div>
                 <div class="toggle-options">
                     <button class="setup-btn" data-drink="regular">Regular</button>
@@ -743,7 +745,6 @@
         function setupServiceType() {
             const setupBtns = document.querySelectorAll('.setup-btn');
             const startBtn = document.getElementById('startServiceBtn');
-            const locationToggle = document.getElementById('locationToggle');
             const foodToggle = document.getElementById('foodToggle');
             const drinkToggle = document.getElementById('drinkToggle');
 
@@ -767,15 +768,10 @@
                         sessionData.config.service = service;
 
                         // Show/hide toggles based on service type
-                        locationToggle.classList.toggle('hidden', service !== 'light');
                         foodToggle.classList.toggle('hidden', service !== 'breakfast');
                         drinkToggle.classList.toggle('hidden', service !== 'breakfast');
 
-                        // Reset toggle selections
-                        if (service === 'light') {
-                            document.querySelector('[data-location="restaurant"]').classList.add('selected');
-                            sessionData.config.location = 'restaurant';
-                        }
+                        // Reset toggle selections for breakfast
                         if (service === 'breakfast') {
                             document.querySelector('[data-food="hot"]').classList.add('selected');
                             document.querySelector('[data-drink="regular"]').classList.add('selected');
@@ -803,7 +799,7 @@
                     }
 
                     // Enable start button if basic config is set
-                    startBtn.disabled = !(sessionData.config.guests && sessionData.config.service);
+                    startBtn.disabled = !(sessionData.config.guests && sessionData.config.service && sessionData.config.location);
                 });
             });
 
@@ -857,11 +853,6 @@
                     if (config.drink === 'fresh' && step.key === 'juice_served') return false;
                 }
 
-                // Hide cocktail steps if not relevant
-                if (!step.key.includes('cocktail') || config.service === 'drinks' || config.service === 'light' || config.service === 'breakfast') {
-                    return true;
-                }
-                
                 return true;
             });
 
@@ -969,9 +960,9 @@
                             gapElement.textContent = `${gapSeconds}s`;
                         }
                         
-                        // Adjust target for location/type
+                        // Adjust target for location
                         let target = step.target;
-                        if (config.service === 'light' && config.location === 'beach') {
+                        if (config.service === 'light' && (config.location === 'beach' || config.location === 'poolside')) {
                             if (step.key === 'greeted') target = 300;
                             if (step.key === 'food_served') target = 1200;
                             if (step.key === 'additional_offered') target = 300;
@@ -1004,11 +995,8 @@
         function updateSessionDetails() {
             const config = sessionData.config;
             const serviceConfig = serviceConfigs[config.service];
-            let details = `${config.guests} guest${config.guests > 1 ? 's' : ''} • ${serviceConfig.name}`;
+            let details = `${config.guests} guest${config.guests > 1 ? 's' : ''} • ${serviceConfig.name} • ${config.location}`;
             
-            if (config.service === 'light') {
-                details += ` • ${config.location}`;
-            }
             if (config.service === 'breakfast') {
                 details += ` • ${config.food} food, ${config.drink} juice`;
             }
@@ -1084,7 +1072,7 @@
                 config: {
                     guests: null,
                     service: null,
-                    location: 'restaurant',
+                    location: null,
                     food: 'hot',
                     drink: 'regular'
                 }
@@ -1101,9 +1089,8 @@
             // Reset setup
             document.querySelectorAll('.setup-btn').forEach(btn => btn.classList.remove('selected'));
             document.getElementById('startServiceBtn').disabled = true;
-            document.getElementById('locationToggle').classList.add('hidden');
             document.getElementById('foodToggle').classList.add('hidden');
-            document.getElementById('drinkToggle').classList.add('hidden');}
+            document.getElementById('drinkToggle').classList.add('hidden');
         }
 
         function endService() {
@@ -1135,8 +1122,8 @@
             report += '==================================\n\n';
             report += `Date: ${new Date().toLocaleDateString()}\n`;
             report += `Service Type: ${serviceConfig.name}\n`;
+            report += `Location: ${config.location}\n`;
             report += `Guests: ${config.guests}\n`;
-            if (config.service === 'light') report += `Location: ${config.location}\n`;
             if (config.service === 'breakfast') report += `Food: ${config.food}, Juice: ${config.drink}\n`;
             report += `Start Time: ${sessionData.startTime.toLocaleTimeString()}\n`;
             if (sessionData.endTime) report += `End Time: ${sessionData.endTime.toLocaleTimeString()}\n`;
@@ -1171,7 +1158,7 @@
                     const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
                     
                     let target = step.target;
-                    if (config.service === 'light' && config.location === 'beach') {
+                    if (config.service === 'light' && (config.location === 'beach' || config.location === 'poolside')) {
                         if (step.key === 'greeted') target = 300;
                         if (step.key === 'food_served') target = 1200;
                         if (step.key === 'additional_offered') target = 300;
@@ -1207,13 +1194,6 @@
         updateCurrentTime();
         setInterval(updateCurrentTime, 1000);
         setupServiceType();
-
-        // Show location always, hide food/juice initially
-        document.getElementById('foodToggle').classList.add('hidden');
-        document.getElementById('drinkToggle').classList.add('hidden');
-        
-        document.getElementById('foodToggle').classList.add('hidden');
-        document.getElementById('drinkToggle').classList.add('hidden');
 
         // Register service worker for PWA
         if ('serviceWorker' in navigator) {
