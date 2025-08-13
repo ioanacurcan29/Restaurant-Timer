@@ -74,10 +74,6 @@
             margin-bottom: 25px;
         }
 
-        .setup-section.hidden {
-            display: none;
-        }
-
         .setup-label {
             font-size: 16px;
             font-weight: 500;
@@ -112,13 +108,6 @@
 
         .setup-btn:active {
             transform: scale(0.95);
-        }
-
-        .toggle-options {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 10px;
         }
 
         .start-btn {
@@ -507,7 +496,7 @@
                 <div class="setup-label">Number of Guests</div>
                 <div class="setup-options">
                     <button class="setup-btn" data-guests="1">1 Guest</button>
-                    <button class="setup-btn" data-guests="2">2+ Guests</button>
+                    <button class="setup-btn" data-guests="2">2 Guests</button>
                 </div>
             </div>
 
@@ -522,32 +511,13 @@
                 </div>
             </div>
 
-            <!-- Location Selection (Always Visible) -->
-            <div class="setup-section" id="locationToggle">
+            <div class="setup-section">
                 <div class="setup-label">Location</div>
                 <div class="setup-options">
                     <button class="setup-btn" data-location="bar">Bar</button>
                     <button class="setup-btn" data-location="restaurant">Restaurant</button>
                     <button class="setup-btn" data-location="beach">Beach</button>
                     <button class="setup-btn" data-location="poolside">Poolside</button>
-                </div>
-            </div>
-
-            <!-- Food Type Toggle for Breakfast -->
-            <div class="setup-section hidden" id="foodToggle">
-                <div class="setup-label">Food Type</div>
-                <div class="toggle-options">
-                    <button class="setup-btn" data-food="cold">Cold</button>
-                    <button class="setup-btn" data-food="hot">Hot</button>
-                </div>
-            </div>
-
-            <!-- Drink Type Toggle for Breakfast -->
-            <div class="setup-section hidden" id="drinkToggle">
-                <div class="setup-label">Juice Type</div>
-                <div class="toggle-options">
-                    <button class="setup-btn" data-drink="regular">Regular</button>
-                    <button class="setup-btn" data-drink="fresh">Fresh</button>
                 </div>
             </div>
 
@@ -576,8 +546,8 @@
                 <div class="stat-label">Total Steps</div>
             </div>
             <div class="stat-box">
-                <div class="stat-number" id="avgTime">--</div>
-                <div class="stat-label">Avg Gap</div>
+                <div class="stat-number" id="delayCount">0</div>
+                <div class="stat-label">Delays</div>
             </div>
         </div>
 
@@ -629,9 +599,7 @@
             config: {
                 guests: null,
                 service: null,
-                location: 'restaurant',
-                food: 'hot',
-                drink: 'regular'
+                location: null
             }
         };
 
@@ -648,10 +616,14 @@
                     { key: 'drinks_ordered', name: 'Drinks order taken', dot: 'blue', target: 180, from: 'seated' },
                     { key: 'drinks_served', name: 'Drinks served', dot: 'blue', target: 300, from: 'drinks_ordered' },
                     { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'drinks_ordered' },
-                    { key: 'glass_empty', name: 'Glass empty', dot: 'gray', target: null },
-                    { key: 'additional_offered', name: 'Additional drink offered', dot: 'blue', target: 120, from: 'glass_empty' },
-                    { key: 'additional_served', name: 'Additional drink served', dot: 'blue', target: 300, from: 'additional_offered' },
-                    { key: 'additional_cocktail', name: 'Additional cocktail served', dot: 'blue', target: 480, from: 'additional_offered' },
+                    { key: 'glass_empty_g1', name: 'G1 glass empty', dot: 'gray', target: null },
+                    { key: 'glass_empty_g2', name: 'G2 glass empty', dot: 'gray', target: null, guests: 2 },
+                    { key: 'additional_offered_g1', name: 'G1 additional drink offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
+                    { key: 'additional_offered_g2', name: 'G2 additional drink offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
+                    { key: 'additional_served_g1', name: 'G1 additional drink served', dot: 'blue', target: 300, from: 'additional_offered_g1' },
+                    { key: 'additional_served_g2', name: 'G2 additional drink served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
+                    { key: 'additional_cocktail_g1', name: 'G1 additional cocktail served', dot: 'blue', target: 480, from: 'additional_offered_g1' },
+                    { key: 'additional_cocktail_g2', name: 'G2 additional cocktail served', dot: 'blue', target: 480, from: 'additional_offered_g2', guests: 2 },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
                     { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
                 ]
@@ -659,45 +631,31 @@
             light: {
                 name: 'Light Meals',
                 steps: [
-                    { key: 'greeted', name: 'Greeted/acknowledged', dot: 'green', target: 60 }, // 300 for beach
+                    { key: 'greeted', name: 'Greeted/acknowledged', dot: 'green', target: 60 }, // 300 for beach/poolside
                     { key: 'menu_presented', name: 'Menu presented', dot: 'green', target: null },
                     { key: 'order_taken', name: 'Food & beverage order taken', dot: 'orange', target: 300, from: 'menu_presented' },
                     { key: 'drinks_served', name: 'Drinks served', dot: 'blue', target: 300, from: 'order_taken' },
                     { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'order_taken' },
-                    { key: 'food_served', name: 'Food served', dot: 'orange', target: 900, from: 'order_taken' }, // 1200 for beach
+                    { key: 'food_served', name: 'Food served', dot: 'orange', target: 900, from: 'order_taken' }, // 1200 for beach/poolside
                     { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
-                    { key: 'additional_offered', name: 'Additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty' }, // 300 for beach
-                    { key: 'additional_served', name: 'Additional beverage served', dot: 'blue', target: 300, from: 'additional_offered' },
-                    { key: 'food_cleared', name: 'Food cleared', dot: 'red', target: 300, from: 'food_finished' },
+                    { key: 'glass_empty_g1', name: 'G1 glass empty', dot: 'gray', target: null },
+                    { key: 'glass_empty_g2', name: 'G2 glass empty', dot: 'gray', target: null, guests: 2 },
+                    { key: 'additional_offered_g1', name: 'G1 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g1' }, // 300 for beach/poolside
+                    { key: 'additional_offered_g2', name: 'G2 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
+                    { key: 'additional_served_g1', name: 'G1 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g1' },
+                    { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
                     { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
-                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' }, // 900 for beach
-                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null }, // n/a for beach
+                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'dessert_finished', name: 'Dessert finished', dot: 'gray', target: null },
+                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
+                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
                     { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
-                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
-                ]
-            },
-            breakfast: {
-                name: 'Breakfast Service',
-                steps: [
-                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
-                    { key: 'menu_presented', name: 'Menu presented', dot: 'green', target: null },
-                    { key: 'beverages_offered', name: 'Coffee/tea/juice offered', dot: 'blue', target: 60, from: 'greeted_seated' },
-                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'blue', target: 300, from: 'beverages_offered' },
-                    { key: 'juice_served', name: 'Regular juice served', dot: 'blue', target: 300, from: 'beverages_offered' },
-                    { key: 'fresh_juice_served', name: 'Fresh juice served', dot: 'blue', target: 480, from: 'beverages_offered' },
-                    { key: 'food_ordered', name: 'Food order taken', dot: 'orange', target: null },
-                    { key: 'cold_breakfast', name: 'Cold breakfast served', dot: 'orange', target: 420, from: 'food_ordered' },
-                    { key: 'hot_breakfast', name: 'Hot breakfast served', dot: 'orange', target: 600, from: 'food_ordered' },
-                    { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
-                    { key: 'dishes_cleared', name: 'Dishes cleared', dot: 'red', target: 300, from: 'breakfast_finished' },
-                    { key: 'refill_offered', name: 'Beverage refill offered', dot: 'blue', target: 120, from: 'beverage_empty' },
-                    { key: 'refill_served', name: 'Beverage refill served', dot: 'blue', target: 300, from: 'refill_offered' },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
                     { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
                 ]
             },
-            lunch: {
-                name: 'Lunch Service',
+            dinner: {
+                name: 'Restaurant Dining',
                 steps: [
                     { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
                     { key: 'menu_presented', name: 'Menu/wine list presented', dot: 'green', target: 300, from: 'greeted_seated' },
@@ -707,18 +665,26 @@
                     { key: 'water_offered', name: 'Water offered and served', dot: 'blue', target: null },
                     { key: 'order_taken', name: 'Food order taken', dot: 'orange', target: 600, from: 'menu_presented' },
                     { key: 'bread_served', name: 'Bread/rolls served', dot: 'orange', target: null },
-                    { key: 'wine_served', name: 'Wine ordered and served', dot: 'blue', target: 300, from: 'wine_ordered' },
+                    { key: 'wine_served', name: 'Wine ordered and served', dot: 'blue', target: 300, from: 'order_taken' },
                     { key: 'starter_served', name: 'Starter served', dot: 'orange', target: 900, from: 'order_taken' },
+                    { key: 'starter_finished', name: 'Starter finished', dot: 'gray', target: null },
                     { key: 'starter_cleared', name: 'Starter cleared', dot: 'red', target: 300, from: 'starter_finished' },
                     { key: 'main_served', name: 'Main course served', dot: 'orange', target: 1200, from: 'starter_cleared' },
+                    { key: 'main_finished', name: 'Main course finished', dot: 'gray', target: null },
                     { key: 'main_cleared', name: 'Main course cleared', dot: 'red', target: 300, from: 'main_finished' },
                     { key: 'table_crumbed', name: 'Table crumbed down', dot: 'red', target: null },
+                    { key: 'glass_empty_g1', name: 'G1 beverage empty', dot: 'gray', target: null },
+                    { key: 'glass_empty_g2', name: 'G2 beverage empty', dot: 'gray', target: null, guests: 2 },
+                    { key: 'additional_offered_g1', name: 'G1 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
+                    { key: 'additional_offered_g2', name: 'G2 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
+                    { key: 'additional_served_g1', name: 'G1 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g1' },
+                    { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
                     { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
                     { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'dessert_finished', name: 'Dessert finished', dot: 'gray', target: null },
                     { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
                     { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
                     { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
-                    { key: 'additional_offered', name: 'Additional beverages offered', dot: 'blue', target: 120, from: 'beverage_empty' },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
                     { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
                 ]
@@ -745,16 +711,12 @@
         function setupServiceType() {
             const setupBtns = document.querySelectorAll('.setup-btn');
             const startBtn = document.getElementById('startServiceBtn');
-            const foodToggle = document.getElementById('foodToggle');
-            const drinkToggle = document.getElementById('drinkToggle');
 
             setupBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const guests = btn.dataset.guests;
                     const service = btn.dataset.service;
                     const location = btn.dataset.location;
-                    const food = btn.dataset.food;
-                    const drink = btn.dataset.drink;
 
                     if (guests) {
                         document.querySelectorAll('[data-guests]').forEach(b => b.classList.remove('selected'));
@@ -766,18 +728,6 @@
                         document.querySelectorAll('[data-service]').forEach(b => b.classList.remove('selected'));
                         btn.classList.add('selected');
                         sessionData.config.service = service;
-
-                        // Show/hide toggles based on service type
-                        foodToggle.classList.toggle('hidden', service !== 'breakfast');
-                        drinkToggle.classList.toggle('hidden', service !== 'breakfast');
-
-                        // Reset toggle selections for breakfast
-                        if (service === 'breakfast') {
-                            document.querySelector('[data-food="hot"]').classList.add('selected');
-                            document.querySelector('[data-drink="regular"]').classList.add('selected');
-                            sessionData.config.food = 'hot';
-                            sessionData.config.drink = 'regular';
-                        }
                     }
 
                     if (location) {
@@ -786,19 +736,7 @@
                         sessionData.config.location = location;
                     }
 
-                    if (food) {
-                        document.querySelectorAll('[data-food]').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        sessionData.config.food = food;
-                    }
-
-                    if (drink) {
-                        document.querySelectorAll('[data-drink]').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        sessionData.config.drink = drink;
-                    }
-
-                    // Enable start button if basic config is set
+                    // Enable start button if all config is set
                     startBtn.disabled = !(sessionData.config.guests && sessionData.config.service && sessionData.config.location);
                 });
             });
@@ -838,21 +776,12 @@
             
             let steps = [...serviceConfig.steps];
             
-            // Filter steps based on configuration
+            // Filter steps based on guest count
             steps = steps.filter(step => {
-                // Hide guest 2 steps if only 1 guest
-                if (config.guests === 1 && step.key.includes('guest2')) {
+                // Hide 2-guest steps if only 1 guest
+                if (config.guests === 1 && step.guests === 2) {
                     return false;
                 }
-                
-                // Hide breakfast food type not selected
-                if (config.service === 'breakfast') {
-                    if (config.food === 'cold' && step.key === 'hot_breakfast') return false;
-                    if (config.food === 'hot' && step.key === 'cold_breakfast') return false;
-                    if (config.drink === 'regular' && step.key === 'fresh_juice_served') return false;
-                    if (config.drink === 'fresh' && step.key === 'juice_served') return false;
-                }
-
                 return true;
             });
 
@@ -940,6 +869,7 @@
         function updateStepGaps() {
             const config = sessionData.config;
             const serviceConfig = serviceConfigs[config.service];
+            let delayCount = 0;
             
             serviceConfig.steps.forEach(step => {
                 if (!step.from || !sessionData.timings[step.key]) return;
@@ -965,41 +895,31 @@
                         if (config.service === 'light' && (config.location === 'beach' || config.location === 'poolside')) {
                             if (step.key === 'greeted') target = 300;
                             if (step.key === 'food_served') target = 1200;
-                            if (step.key === 'additional_offered') target = 300;
+                            if (step.key.includes('additional_offered')) target = 300;
                             if (step.key === 'dessert_served') target = 900;
                         }
                         
                         if (target && gapSeconds > target) {
                             gapElement.classList.add('long');
+                            delayCount++;
                         }
                     }
                 }
             });
+            
+            // Update delay count
+            document.getElementById('delayCount').textContent = delayCount;
         }
 
         function updateStats() {
             const completed = Object.keys(sessionData.timings).length;
             document.getElementById('completedCount').textContent = completed;
-            
-            if (completed > 1) {
-                const times = Object.values(sessionData.timings).sort((a, b) => a - b);
-                let totalGaps = 0;
-                for (let i = 1; i < times.length; i++) {
-                    totalGaps += (times[i] - times[i-1]) / 1000;
-                }
-                const avgGap = Math.round(totalGaps / (times.length - 1));
-                document.getElementById('avgTime').textContent = `${avgGap}s`;
-            }
         }
 
         function updateSessionDetails() {
             const config = sessionData.config;
             const serviceConfig = serviceConfigs[config.service];
             let details = `${config.guests} guest${config.guests > 1 ? 's' : ''} • ${serviceConfig.name} • ${config.location}`;
-            
-            if (config.service === 'breakfast') {
-                details += ` • ${config.food} food, ${config.drink} juice`;
-            }
             
             document.getElementById('sessionDetails').textContent = details;
         }
@@ -1072,9 +992,7 @@
                 config: {
                     guests: null,
                     service: null,
-                    location: null,
-                    food: 'hot',
-                    drink: 'regular'
+                    location: null
                 }
             };
             
@@ -1089,8 +1007,6 @@
             // Reset setup
             document.querySelectorAll('.setup-btn').forEach(btn => btn.classList.remove('selected'));
             document.getElementById('startServiceBtn').disabled = true;
-            document.getElementById('foodToggle').classList.add('hidden');
-            document.getElementById('drinkToggle').classList.add('hidden');
         }
 
         function endService() {
@@ -1124,7 +1040,6 @@
             report += `Service Type: ${serviceConfig.name}\n`;
             report += `Location: ${config.location}\n`;
             report += `Guests: ${config.guests}\n`;
-            if (config.service === 'breakfast') report += `Food: ${config.food}, Juice: ${config.drink}\n`;
             report += `Start Time: ${sessionData.startTime.toLocaleTimeString()}\n`;
             if (sessionData.endTime) report += `End Time: ${sessionData.endTime.toLocaleTimeString()}\n`;
             report += `Duration: ${document.getElementById('elapsedTime').textContent}\n\n`;
@@ -1145,6 +1060,7 @@
             report += '\nPerformance Analysis:\n';
             report += '--------------------\n';
             
+            let delays = 0;
             serviceConfig.steps.forEach(step => {
                 if (!step.from || !sessionData.timings[step.key]) return;
                 
@@ -1161,14 +1077,17 @@
                     if (config.service === 'light' && (config.location === 'beach' || config.location === 'poolside')) {
                         if (step.key === 'greeted') target = 300;
                         if (step.key === 'food_served') target = 1200;
-                        if (step.key === 'additional_offered') target = 300;
+                        if (step.key.includes('additional_offered')) target = 300;
                         if (step.key === 'dessert_served') target = 900;
                     }
                     
                     const status = target && gapSeconds > target ? '⚠️  SLOW' : '✅ GOOD';
+                    if (target && gapSeconds > target) delays++;
                     report += `${step.name}: ${timeStr} ${status}\n`;
                 }
             });
+            
+            report += `\nTotal Delays: ${delays}\n`;
             
             const notes = document.getElementById('noteInput').value.trim();
             if (notes) {
@@ -1205,4 +1124,4 @@
         }
     </script>
 </body>
-</html>
+</html> 
