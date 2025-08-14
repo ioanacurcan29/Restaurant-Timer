@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1192,28 +1193,52 @@
                 recognition.onstart = () => {
                     isRecording = true;
                     voiceBtn.classList.add('recording');
+                    voiceBtn.textContent = '⏹️';
                     voiceStatus.textContent = 'Recording... Tap to stop';
                 };
 
                 recognition.onresult = (event) => {
-                    let transcript = '';
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
                     for (let i = event.resultIndex; i < event.results.length; i++) {
-                        transcript += event.results[i][0].transcript;
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                        } else {
+                            interimTranscript += transcript;
+                        }
                     }
                     
-                    sessionData.voiceTranscript = transcript;
-                    voiceTranscription.textContent = transcript;
+                    // Accumulate the transcript instead of replacing
+                    if (finalTranscript) {
+                        sessionData.voiceTranscript += finalTranscript;
+                    }
+                    
+                    // Display current transcript + interim
+                    const displayText = sessionData.voiceTranscript + interimTranscript;
+                    voiceTranscription.textContent = displayText;
                     voiceTranscription.classList.add('visible');
                 };
 
                 recognition.onerror = (event) => {
                     console.error('Speech recognition error:', event.error);
-                    voiceStatus.textContent = 'Voice recording error. Tap to try again.';
+                    if (event.error !== 'aborted') {
+                        voiceStatus.textContent = 'Voice recording error. Tap to try again.';
+                    }
                     stopRecording();
                 };
 
                 recognition.onend = () => {
-                    stopRecording();
+                    if (isRecording) {
+                        // Only restart if we're still supposed to be recording
+                        // and it wasn't manually stopped
+                        try {
+                            recognition.start();
+                        } catch (error) {
+                            stopRecording();
+                        }
+                    }
                 };
             } else {
                 voiceStatus.textContent = 'Voice recording not supported';
@@ -1222,7 +1247,7 @@
 
             voiceBtn.addEventListener('click', () => {
                 if (isRecording) {
-                    recognition.stop();
+                    stopRecording();
                 } else {
                     startRecording();
                 }
@@ -1245,8 +1270,18 @@
             const voiceBtn = document.getElementById('voiceBtn');
             const voiceStatus = document.getElementById('voiceStatus');
             
+            if (recognition) {
+                recognition.stop();
+            }
+            
             voiceBtn.classList.remove('recording');
-            voiceStatus.textContent = sessionData.voiceTranscript ? 'Voice note recorded. Tap to record again.' : 'Tap to record experience notes';
+            voiceBtn.textContent = '🎤';
+            
+            if (sessionData.voiceTranscript.trim()) {
+                voiceStatus.textContent = 'Voice note saved. Tap to add more or record new note.';
+            } else {
+                voiceStatus.textContent = 'Tap to record experience notes';
+            }
         }
 
         function confirmReset() {
