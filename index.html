@@ -361,6 +361,148 @@
             border-color: #000;
         }
 
+        .experience-rating {
+            padding: 15px;
+            border-top: 1px solid #e5e5ea;
+            background: #f8f9fa;
+            display: none;
+            text-align: center;
+        }
+
+        .experience-rating.visible {
+            display: block;
+        }
+
+        .rating-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .emoji-scale {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .emoji-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            min-width: 50px;
+        }
+
+        .emoji-btn:active {
+            transform: scale(0.95);
+        }
+
+        .emoji-btn.selected {
+            background: rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .emoji {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .emoji-rating {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .emoji-1 { color: #dc3545; }
+        .emoji-2 { color: #fd7e14; }
+        .emoji-3 { color: #ffc107; }
+        .emoji-4 { color: #28a745; }
+        .emoji-5 { color: #20c997; }
+
+        .voice-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .voice-btn {
+            padding: 12px;
+            border: 2px solid #007AFF;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 18px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-btn.recording {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        .voice-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        .voice-status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            min-height: 16px;
+        }
+
+        .voice-transcription {
+            background: white;
+            border: 1px solid #e5e5ea;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+            min-height: 40px;
+            display: none;
+        }
+
+        .voice-transcription.visible {
+            display: block;
+        }
+
+        .selected-rating {
+            background: rgba(0,0,0,0.05);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .selected-rating.visible {
+            display: block;
+        }
+
         .export-section {
             padding: 15px;
             border-top: 1px solid #e5e5ea;
@@ -559,6 +701,41 @@
             <textarea class="note-input" placeholder="Quality notes and observations..." id="noteInput"></textarea>
         </div>
 
+        <div class="experience-rating" id="experienceRating">
+            <div class="rating-title">Overall Experience Rating</div>
+            
+            <div class="emoji-scale">
+                <button class="emoji-btn" data-rating="1" data-feeling="Frustrated">
+                    <div class="emoji">😤</div>
+                    <div class="emoji-rating emoji-1">1</div>
+                </button>
+                <button class="emoji-btn" data-rating="2" data-feeling="Disappointed">
+                    <div class="emoji">😕</div>
+                    <div class="emoji-rating emoji-2">2</div>
+                </button>
+                <button class="emoji-btn" data-rating="3" data-feeling="Content">
+                    <div class="emoji">😐</div>
+                    <div class="emoji-rating emoji-3">3</div>
+                </button>
+                <button class="emoji-btn" data-rating="4" data-feeling="Appreciated">
+                    <div class="emoji">🙂</div>
+                    <div class="emoji-rating emoji-4">4</div>
+                </button>
+                <button class="emoji-btn" data-rating="5" data-feeling="Pampered">
+                    <div class="emoji">😊</div>
+                    <div class="emoji-rating emoji-5">5</div>
+                </button>
+            </div>
+
+            <div class="selected-rating" id="selectedRating"></div>
+
+            <div class="voice-controls">
+                <button class="voice-btn" id="voiceBtn" title="Record voice note">🎤</button>
+            </div>
+            <div class="voice-status" id="voiceStatus">Tap to record experience notes</div>
+            <div class="voice-transcription" id="voiceTranscription"></div>
+        </div>
+
         <div class="export-section" id="exportSection">
             <button class="export-btn" onclick="exportReport()">📤 Export Report</button>
         </div>
@@ -596,6 +773,10 @@
             endTime: null,
             timings: {},
             notes: '',
+            experienceRating: null,
+            experienceFeeling: '',
+            voiceNote: '',
+            voiceTranscript: '',
             config: {
                 guests: null,
                 service: null,
@@ -605,6 +786,8 @@
 
         let timerInterval;
         let adjustingStep = null;
+        let recognition = null;
+        let isRecording = false;
 
         // Service configurations
         const serviceConfigs = {
@@ -646,65 +829,8 @@
                     { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
                     { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
                     { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
-                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
-                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
-                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
-                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
-                ]
-                },
-            breakfast: {
-                name: 'Breakfast Service',
-                steps: [
-                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
-                    { key: 'menu_presented', name: 'Menu presented', dot: 'green', target: null },
-                    { key: 'beverages_offered', name: 'Coffee/tea/juice offered', dot: 'blue', target: 60, from: 'greeted_seated' },
-                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'blue', target: 300, from: 'beverages_offered' },
-                    { key: 'juice_served', name: 'Juice served', dot: 'blue', target: 300, from: 'beverages_offered' },
-                    { key: 'fresh_juice_served', name: 'Fresh juice served', dot: 'blue', target: 480, from: 'beverages_offered' },
-                    { key: 'food_ordered', name: 'Food order taken', dot: 'orange', target: null },
-                    { key: 'cold_breakfast_served', name: 'Cold breakfast served', dot: 'orange', target: 420, from: 'food_ordered' },
-                    { key: 'hot_breakfast_served', name: 'Hot breakfast served', dot: 'orange', target: 600, from: 'food_ordered' },
-                    { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
-                    { key: 'breakfast_finished', name: 'Breakfast finished', dot: 'gray', target: null },
-                    { key: 'dishes_cleared', name: 'Dishes cleared', dot: 'red', target: 300, from: 'breakfast_finished' },
-                    { key: 'glass_empty_g1', name: 'G1 beverage empty', dot: 'gray', target: null },
-                    { key: 'glass_empty_g2', name: 'G2 beverage empty', dot: 'gray', target: null, guests: 2 },
-                    { key: 'refill_offered_g1', name: 'G1 beverage refill offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
-                    { key: 'refill_offered_g2', name: 'G2 beverage refill offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
-                    { key: 'refill_served_g1', name: 'G1 beverage refill served', dot: 'blue', target: 300, from: 'refill_offered_g1' },
-                    { key: 'refill_served_g2', name: 'G2 beverage refill served', dot: 'blue', target: 300, from: 'refill_offered_g2', guests: 2 },
-                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
-                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
-                ]
-            },
-            lunch: {
-                name: 'Lunch Service',
-                steps: [
-                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
-                    { key: 'menu_presented', name: 'Menu/wine list presented', dot: 'green', target: 300, from: 'greeted_seated' },
-                    { key: 'premeal_offered', name: 'Pre-meal drink offered', dot: 'blue', target: 60, from: 'greeted_seated' },
-                    { key: 'premeal_served', name: 'Pre-meal drinks served', dot: 'blue', target: 300, from: 'premeal_offered' },
-                    { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'premeal_offered' },
-                    { key: 'water_offered', name: 'Water offered and served', dot: 'blue', target: null },
-                    { key: 'order_taken', name: 'Food order taken', dot: 'orange', target: 600, from: 'menu_presented' },
-                    { key: 'bread_served', name: 'Bread/rolls served', dot: 'orange', target: null },
-                    { key: 'wine_ordered', name: 'Wine ordered', dot: 'blue', target: null },
-                    { key: 'wine_served', name: 'Wine served', dot: 'blue', target: 300, from: 'wine_ordered' },
-                    { key: 'starter_served', name: 'Starter served', dot: 'orange', target: 900, from: 'order_taken' },
-                    { key: 'starter_finished', name: 'Starter finished', dot: 'gray', target: null },
-                    { key: 'starter_cleared', name: 'Starter cleared', dot: 'red', target: 300, from: 'starter_finished' },
-                    { key: 'main_served', name: 'Main course served', dot: 'orange', target: 1200, from: 'starter_cleared' },
-                    { key: 'main_finished', name: 'Main course finished', dot: 'gray', target: null },
-                    { key: 'main_cleared', name: 'Main course cleared', dot: 'red', target: 300, from: 'main_finished' },
-                    { key: 'table_crumbed', name: 'Table crumbed down', dot: 'red', target: null },
-                    { key: 'glass_empty_g1', name: 'G1 glass empty', dot: 'gray', target: null },
-                    { key: 'glass_empty_g2', name: 'G2 glass empty', dot: 'gray', target: null, guests: 2 },
-                    { key: 'additional_offered_g1', name: 'G1 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
-                    { key: 'additional_offered_g2', name: 'G2 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
-                    { key: 'additional_served_g1', name: 'G1 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g1' },
-                    { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
-                    { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
-                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'dessert_finished', name: 'Dessert finished', dot: 'gray', target: null },
+                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
                     { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
                     { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
@@ -722,8 +848,7 @@
                     { key: 'water_offered', name: 'Water offered and served', dot: 'blue', target: null },
                     { key: 'order_taken', name: 'Food order taken', dot: 'orange', target: 600, from: 'menu_presented' },
                     { key: 'bread_served', name: 'Bread/rolls served', dot: 'orange', target: null },
-                    { key: 'wine_ordered', name: 'Wine ordered', dot: 'blue', target: null },
-                    { key: 'wine_served', name: 'Wine served', dot: 'blue', target: 300, from: 'wine_ordered' },
+                    { key: 'wine_served', name: 'Wine ordered and served', dot: 'blue', target: 300, from: 'order_taken' },
                     { key: 'starter_served', name: 'Starter served', dot: 'orange', target: 900, from: 'order_taken' },
                     { key: 'starter_finished', name: 'Starter finished', dot: 'gray', target: null },
                     { key: 'starter_cleared', name: 'Starter cleared', dot: 'red', target: 300, from: 'starter_finished' },
@@ -731,14 +856,16 @@
                     { key: 'main_finished', name: 'Main course finished', dot: 'gray', target: null },
                     { key: 'main_cleared', name: 'Main course cleared', dot: 'red', target: 300, from: 'main_finished' },
                     { key: 'table_crumbed', name: 'Table crumbed down', dot: 'red', target: null },
-                    { key: 'glass_empty_g1', name: 'G1 glass empty', dot: 'gray', target: null },
-                    { key: 'glass_empty_g2', name: 'G2 glass empty', dot: 'gray', target: null, guests: 2 },
+                    { key: 'glass_empty_g1', name: 'G1 beverage empty', dot: 'gray', target: null },
+                    { key: 'glass_empty_g2', name: 'G2 beverage empty', dot: 'gray', target: null, guests: 2 },
                     { key: 'additional_offered_g1', name: 'G1 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
                     { key: 'additional_offered_g2', name: 'G2 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
                     { key: 'additional_served_g1', name: 'G1 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g1' },
                     { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
                     { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
                     { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'dessert_finished', name: 'Dessert finished', dot: 'gray', target: null },
+                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
                     { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
                     { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
@@ -813,6 +940,7 @@
             document.getElementById('controlsSection').classList.add('visible');
             document.getElementById('timeline').classList.add('visible');
             document.getElementById('notesArea').classList.add('visible');
+            document.getElementById('experienceRating').classList.add('visible');
             document.getElementById('exportSection').classList.add('visible');
 
             // Generate timeline
@@ -865,6 +993,8 @@
 
             // Add event listeners
             addStepListeners();
+            addExperienceListeners();
+            setupVoiceRecording();
         }
 
         function addStepListeners() {
@@ -1020,6 +1150,105 @@
             closeTimeAdjust();
         }
 
+        function addExperienceListeners() {
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove previous selection
+                    document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+                    
+                    // Add selection to clicked button
+                    btn.classList.add('selected');
+                    
+                    // Store rating
+                    sessionData.experienceRating = parseInt(btn.dataset.rating);
+                    sessionData.experienceFeeling = btn.dataset.feeling;
+                    
+                    // Update display
+                    const ratingDisplay = document.getElementById('selectedRating');
+                    ratingDisplay.textContent = `Rating: ${sessionData.experienceRating}/5 - ${sessionData.experienceFeeling}`;
+                    ratingDisplay.classList.add('visible');
+                    
+                    // Haptic feedback
+                    if (navigator.vibrate) {
+                        navigator.vibrate(30);
+                    }
+                });
+            });
+        }
+
+        function setupVoiceRecording() {
+            const voiceBtn = document.getElementById('voiceBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+            const voiceTranscription = document.getElementById('voiceTranscription');
+
+            // Check if speech recognition is supported
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = () => {
+                    isRecording = true;
+                    voiceBtn.classList.add('recording');
+                    voiceStatus.textContent = 'Recording... Tap to stop';
+                };
+
+                recognition.onresult = (event) => {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    
+                    sessionData.voiceTranscript = transcript;
+                    voiceTranscription.textContent = transcript;
+                    voiceTranscription.classList.add('visible');
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    voiceStatus.textContent = 'Voice recording error. Tap to try again.';
+                    stopRecording();
+                };
+
+                recognition.onend = () => {
+                    stopRecording();
+                };
+            } else {
+                voiceStatus.textContent = 'Voice recording not supported';
+                voiceBtn.style.display = 'none';
+            }
+
+            voiceBtn.addEventListener('click', () => {
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    startRecording();
+                }
+            });
+        }
+
+        function startRecording() {
+            if (recognition && !isRecording) {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Error starting recognition:', error);
+                    document.getElementById('voiceStatus').textContent = 'Error starting recording';
+                }
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            const voiceBtn = document.getElementById('voiceBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+            
+            voiceBtn.classList.remove('recording');
+            voiceStatus.textContent = sessionData.voiceTranscript ? 'Voice note recorded. Tap to record again.' : 'Tap to record experience notes';
+        }
+
         function confirmReset() {
             document.getElementById('popupOverlay').style.display = 'block';
             document.getElementById('confirmDialog').style.display = 'block';
@@ -1045,6 +1274,10 @@
                 endTime: null,
                 timings: {},
                 notes: '',
+                experienceRating: null,
+                experienceFeeling: '',
+                voiceNote: '',
+                voiceTranscript: '',
                 config: {
                     guests: null,
                     service: null,
@@ -1052,12 +1285,25 @@
                 }
             };
             
+            // Stop any recording
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+            
+            // Reset experience rating
+            document.querySelectorAll('.emoji-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('selectedRating').classList.remove('visible');
+            document.getElementById('voiceTranscription').classList.remove('visible');
+            document.getElementById('voiceTranscription').textContent = '';
+            document.getElementById('voiceStatus').textContent = 'Tap to record experience notes';
+            
             // Show setup screen
             document.getElementById('setupScreen').classList.remove('hidden');
             document.getElementById('timerSection').classList.remove('visible');
             document.getElementById('controlsSection').classList.remove('visible');
             document.getElementById('timeline').classList.remove('visible');
             document.getElementById('notesArea').classList.remove('visible');
+            document.getElementById('experienceRating').classList.remove('visible');
             document.getElementById('exportSection').classList.remove('visible');
             
             // Reset setup
@@ -1098,7 +1344,14 @@
             report += `Guests: ${config.guests}\n`;
             report += `Start Time: ${sessionData.startTime.toLocaleTimeString()}\n`;
             if (sessionData.endTime) report += `End Time: ${sessionData.endTime.toLocaleTimeString()}\n`;
-            report += `Duration: ${document.getElementById('elapsedTime').textContent}\n\n`;
+            report += `Duration: ${document.getElementById('elapsedTime').textContent}\n`;
+            
+            // Add experience rating
+            if (sessionData.experienceRating) {
+                report += `Overall Experience Rating: ${sessionData.experienceRating}/5 - ${sessionData.experienceFeeling}\n`;
+            }
+            
+            report += '\n';
             
             report += 'Service Timeline:\n';
             report += '----------------\n';
@@ -1148,6 +1401,11 @@
             const notes = document.getElementById('noteInput').value.trim();
             if (notes) {
                 report += `\nQuality Notes:\n--------------\n${notes}\n`;
+            }
+            
+            // Add voice transcript
+            if (sessionData.voiceTranscript) {
+                report += `\nExperience Voice Notes:\n---------------------\n${sessionData.voiceTranscript}\n`;
             }
             
             // Copy to clipboard
