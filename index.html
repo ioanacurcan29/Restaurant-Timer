@@ -1330,23 +1330,6 @@
         }
     }
 }
-    function startRecording() {
-        try {
-            if (recognition && !isRecording) {
-                recognition.start();
-            }
-        } catch (error) {
-            console.error('Error starting recognition:', error);
-            voiceStatus.textContent = 'Error starting voice recognition';
-        }
-    }
-
-    function stopRecording() {
-        if (recognition && isRecording) {
-            recognition.stop();
-        }
-    }
-}
 
         function confirmReset() {
             document.getElementById('popupOverlay').style.display = 'block';
