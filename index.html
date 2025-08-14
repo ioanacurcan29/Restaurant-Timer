@@ -1189,55 +1189,98 @@
     const voiceBtn = document.getElementById('voiceBtn');
     const voiceStatus = document.getElementById('voiceStatus');
     const voiceTranscription = document.getElementById('voiceTranscription');
-    const audioLevel = document.getElementById('audioLevel');
 
-    // Check if MediaRecorder is supported
-    if (!('mediaDevices' in navigator) || !('MediaRecorder' in window)) {
-        voiceStatus.textContent = 'Voice recording not supported in this browser';
+    // Check if speech recognition is supported
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        voiceStatus.textContent = 'Voice recognition not supported in this browser';
         voiceBtn.style.display = 'none';
         return;
     }
 
-    // Setup speech recognition for transcription
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.maxAlternatives = 1;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    
+    // Optimized settings for service notes
+    recognition.continuous = false; // Stop automatically when user stops talking
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
 
-        let finalTranscript = '';
+    let finalTranscript = '';
+    let recordingTimer = null;
 
-        recognition.onresult = (event) => {
-            let interimTranscript = '';
-            
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript + ' ';
-                } else {
-                    interimTranscript += transcript;
-                }
+    recognition.onstart = () => {
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceBtn.textContent = '⏹️';
+        voiceStatus.textContent = 'Listening... Speak now or tap to stop';
+        
+        // Auto-stop after 30 seconds to prevent endless recording
+        recordingTimer = setTimeout(() => {
+            if (isRecording) {
+                stopRecording();
             }
-            
-            const displayText = finalTranscript + interimTranscript;
-            voiceTranscription.textContent = displayText;
-            if (displayText.trim()) {
-                voiceTranscription.classList.add('visible');
-            }
-            
-            // Store the final transcript
-            sessionData.voiceTranscript = finalTranscript;
-        };
+        }, 30000);
+    };
 
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            if (event.error !== 'aborted') {
-                voiceStatus.textContent = 'Speech recognition error. Audio still recording.';
+    recognition.onresult = (event) => {
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript + ' ';
+            } else {
+                interimTranscript += transcript;
             }
-        };
-    }
+        }
+        
+        const displayText = finalTranscript + interimTranscript;
+        voiceTranscription.textContent = displayText;
+        if (displayText.trim()) {
+            voiceTranscription.classList.add('visible');
+        }
+        
+        // Store the final transcript
+        sessionData.voiceTranscript = finalTranscript;
+    };
+
+    recognition.onend = () => {
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.textContent = '🎤';
+        
+        if (recordingTimer) {
+            clearTimeout(recordingTimer);
+            recordingTimer = null;
+        }
+        
+        if (finalTranscript.trim()) {
+            voiceStatus.textContent = `Voice note saved. Tap to add more.`;
+        } else {
+            voiceStatus.textContent = 'No speech detected. Tap to try again.';
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceBtn.textContent = '🎤';
+        
+        if (recordingTimer) {
+            clearTimeout(recordingTimer);
+            recordingTimer = null;
+        }
+        
+        if (event.error === 'not-allowed') {
+            voiceStatus.textContent = 'Microphone access denied. Check browser permissions.';
+        } else if (event.error === 'no-speech') {
+            voiceStatus.textContent = 'No speech detected. Tap to try again.';
+        } else {
+            voiceStatus.textContent = 'Speech recognition error. Tap to try again.';
+        }
+    };
 
     voiceBtn.addEventListener('click', () => {
         if (isRecording) {
@@ -1246,207 +1289,24 @@
             startRecording();
         }
     });
-}
 
-async function startRecording() {
-    try {
-        // Request microphone with high quality settings
-        const constraints = {
-            audio: {
-                echoCancellation: true,
-                autoGainControl: true,
-                noiseSuppression: true,
-                channelCount: 1,
-                sampleRate: 44100,
-                sampleSize: 16
+    function startRecording() {
+        try {
+            if (recognition && !isRecording) {
+                recognition.start();
             }
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        
-        // Setup audio analysis for level display
-        setupAudioAnalysis(stream);
-
-        // Setup MediaRecorder with high quality
-        const options = getRecorderOptions();
-        mediaRecorder = new MediaRecorder(stream, options);
-        
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                audioChunks.push(event.data);
-            }
-        };
-
-        mediaRecorder.onstop = () => {
-            processRecording();
-            cleanupAudioAnalysis();
-        };
-
-        // Start recording
-        mediaRecorder.start(100); // Collect data every 100ms
-        isRecording = true;
-        recordingStartTime = Date.now();
-        
-        // Start speech recognition for transcription
-        if (recognition) {
-            recognition.start();
-        }
-        
-        updateRecordingUI();
-        
-    } catch (error) {
-        console.error('Failed to start recording:', error);
-        document.getElementById('voiceStatus').textContent = 'Microphone access denied or unavailable';
-    }
-}
-
-function stopRecording() {
-    if (!isRecording) return;
-    
-    isRecording = false;
-    
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-    }
-    
-    if (recognition) {
-        recognition.stop();
-    }
-    
-    updateRecordingUI();
-    document.getElementById('voiceStatus').textContent = 'Processing recording...';
-    document.getElementById('voiceBtn').classList.add('processing');
-}
-
-function getRecorderOptions() {
-    // Try different high-quality codecs
-    const mimeTypes = [
-        'audio/webm;codecs=opus',
-        'audio/mp4;codecs=mp4a.40.2',
-        'audio/webm',
-        'audio/mp4'
-    ];
-
-    for (const mimeType of mimeTypes) {
-        if (MediaRecorder.isTypeSupported(mimeType)) {
-            return {
-                mimeType: mimeType,
-                audioBitsPerSecond: 128000 // High quality
-            };
+        } catch (error) {
+            console.error('Error starting recognition:', error);
+            voiceStatus.textContent = 'Error starting voice recognition';
         }
     }
 
-    return {}; // Fallback to default
-}
-
-function setupAudioAnalysis(stream) {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioContext.createAnalyser();
-        microphone = audioContext.createMediaStreamSource(stream);
-        
-        analyser.fftSize = 256;
-        microphone.connect(analyser);
-        
-        document.getElementById('audioLevel').classList.add('visible');
-        updateAudioLevel();
-    } catch (error) {
-        console.warn('Audio analysis setup failed:', error);
-    }
-}
-
-function updateAudioLevel() {
-    if (!analyser || !isRecording) return;
-    
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyser.getByteFrequencyData(dataArray);
-    
-    const average = dataArray.reduce((a, b) => a + b) / bufferLength;
-    const percentage = Math.min((average / 128) * 100, 100); // Cap at 100%
-    
-    document.getElementById('audioLevelBar').style.width = `${percentage}%`;
-    
-    if (isRecording) {
-        requestAnimationFrame(() => updateAudioLevel());
-    }
-}
-
-function cleanupAudioAnalysis() {
-    if (audioContext) {
-        audioContext.close();
-        audioContext = null;
-    }
-    analyser = null;
-    microphone = null;
-    document.getElementById('audioLevel').classList.remove('visible');
-    document.getElementById('audioLevelBar').style.width = '0%';
-}
-
-function processRecording() {
-    if (audioChunks.length === 0) {
-        document.getElementById('voiceStatus').textContent = 'No audio recorded. Tap to try again.';
-        document.getElementById('voiceBtn').classList.remove('processing');
-        return;
-    }
-
-    const audioBlob = new Blob(audioChunks, { 
-        type: mediaRecorder.mimeType || 'audio/wav' 
-    });
-    
-    const duration = (Date.now() - recordingStartTime) / 1000;
-    
-    // Store the audio data
-    sessionData.voiceNote = audioBlob;
-    
-    // Update UI
-    const minutes = Math.floor(duration);
-    const seconds = Math.floor(duration % 60);
-    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
-    document.getElementById('voiceStatus').textContent = 
-        `Voice note saved (${timeStr}, ${formatFileSize(audioBlob.size)}). Tap to record more.`;
-    document.getElementById('voiceBtn').classList.remove('processing');
-}
-
-function updateRecordingUI() {
-    const voiceBtn = document.getElementById('voiceBtn');
-    const voiceStatus = document.getElementById('voiceStatus');
-    
-    if (isRecording) {
-        voiceBtn.classList.add('recording');
-        voiceBtn.textContent = '⏹️';
-        voiceStatus.textContent = 'Recording... Tap to stop';
-    } else {
-        voiceBtn.classList.remove('recording');
-        voiceBtn.textContent = '🎤';
-    }
-}
-
-function formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
-    return Math.round(bytes / (1024 * 1024)) + ' MB';
-} {
-            isRecording = false;
-            const voiceBtn = document.getElementById('voiceBtn');
-            const voiceStatus = document.getElementById('voiceStatus');
-            
-            if (recognition) {
-                recognition.stop();
-            }
-            
-            voiceBtn.classList.remove('recording');
-            voiceBtn.textContent = '🎤';
-            
-            if (sessionData.voiceTranscript.trim()) {
-                voiceStatus.textContent = 'Voice note saved. Tap to add more or record new note.';
-            } else {
-                voiceStatus.textContent = 'Tap to record experience notes';
-            }
+    function stopRecording() {
+        if (recognition && isRecording) {
+            recognition.stop();
         }
+    }
+}
 
         function confirmReset() {
             document.getElementById('popupOverlay').style.display = 'block';
