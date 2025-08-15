@@ -844,6 +844,65 @@
                     { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
                 ]
             },
+            },
+            breakfast: {
+                name: 'Breakfast Service',
+                steps: [
+                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
+                    { key: 'menu_presented', name: 'Menu presented', dot: 'green', target: null },
+                    { key: 'beverages_offered', name: 'Coffee/tea/juice offered', dot: 'blue', target: 60, from: 'greeted_seated' },
+                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'blue', target: 300, from: 'beverages_offered' },
+                    { key: 'juice_served', name: 'Regular juice served', dot: 'blue', target: 300, from: 'beverages_offered' },
+                    { key: 'fresh_juice_served', name: 'Fresh juice served', dot: 'blue', target: 480, from: 'beverages_offered' },
+                    { key: 'food_ordered', name: 'Food order taken', dot: 'orange', target: null },
+                    { key: 'cold_breakfast', name: 'Cold breakfast served', dot: 'orange', target: 420, from: 'food_ordered' },
+                    { key: 'hot_breakfast', name: 'Hot breakfast served', dot: 'orange', target: 600, from: 'food_ordered' },
+                    { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
+                    { key: 'breakfast_finished', name: 'Breakfast finished', dot: 'gray', target: null },
+                    { key: 'dishes_cleared', name: 'Dishes cleared', dot: 'red', target: 300, from: 'breakfast_finished' },
+                    { key: 'glass_empty_g1', name: 'G1 beverage empty', dot: 'gray', target: null },
+                    { key: 'glass_empty_g2', name: 'G2 beverage empty', dot: 'gray', target: null, guests: 2 },
+                    { key: 'refill_offered_g1', name: 'G1 beverage refill offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
+                    { key: 'refill_offered_g2', name: 'G2 beverage refill offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
+                    { key: 'refill_served_g1', name: 'G1 beverage refill served', dot: 'blue', target: 300, from: 'refill_offered_g1' },
+                    { key: 'refill_served_g2', name: 'G2 beverage refill served', dot: 'blue', target: 300, from: 'refill_offered_g2', guests: 2 },
+                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+            },
+            lunch: {
+                name: 'Lunch Service',
+                steps: [
+                    { key: 'greeted_seated', name: 'Greeted and seated', dot: 'green', target: 60 },
+                    { key: 'menu_presented', name: 'Menu/wine list presented', dot: 'green', target: 300, from: 'greeted_seated' },
+                    { key: 'premeal_offered', name: 'Pre-meal drink offered', dot: 'blue', target: 60, from: 'greeted_seated' },
+                    { key: 'premeal_served', name: 'Pre-meal drinks served', dot: 'blue', target: 300, from: 'premeal_offered' },
+                    { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'premeal_offered' },
+                    { key: 'water_offered', name: 'Water offered and served', dot: 'blue', target: null },
+                    { key: 'order_taken', name: 'Food order taken', dot: 'orange', target: 600, from: 'menu_presented' },
+                    { key: 'bread_served', name: 'Bread/rolls served', dot: 'orange', target: null },
+                    { key: 'wine_served', name: 'Wine ordered and served', dot: 'blue', target: 300, from: 'order_taken' },
+                    { key: 'starter_served', name: 'Starter served', dot: 'orange', target: 900, from: 'order_taken' },
+                    { key: 'starter_finished', name: 'Starter finished', dot: 'gray', target: null },
+                    { key: 'starter_cleared', name: 'Starter cleared', dot: 'red', target: 300, from: 'starter_finished' },
+                    { key: 'main_served', name: 'Main course served', dot: 'orange', target: 1200, from: 'starter_cleared' },
+                    { key: 'main_finished', name: 'Main course finished', dot: 'gray', target: null },
+                    { key: 'main_cleared', name: 'Main course cleared', dot: 'red', target: 300, from: 'main_finished' },
+                    { key: 'table_crumbed', name: 'Table crumbed down', dot: 'red', target: null },
+                    { key: 'glass_empty_g1', name: 'G1 beverage empty', dot: 'gray', target: null },
+                    { key: 'glass_empty_g2', name: 'G2 beverage empty', dot: 'gray', target: null, guests: 2 },
+                    { key: 'additional_offered_g1', name: 'G1 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g1' },
+                    { key: 'additional_offered_g2', name: 'G2 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g2', guests: 2 },
+                    { key: 'additional_served_g1', name: 'G1 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g1' },
+                    { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
+                    { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
+                    { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
+                    { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
+                    { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
+                    { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
+                    { key: 'bill_presented', name: 'Bill presented', dot: 'purple', target: 180, from: 'bill_requested' }
+                ]
+                },
             dinner: {
                 name: 'Restaurant Dining',
                 steps: [
