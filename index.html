@@ -838,8 +838,6 @@
                     { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
                     { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
                     { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
-                    { key: 'dessert_finished', name: 'Dessert finished', dot: 'gray', target: null },
-                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
                     { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
                     { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
@@ -873,8 +871,6 @@
                     { key: 'additional_served_g2', name: 'G2 additional beverage served', dot: 'blue', target: 300, from: 'additional_offered_g2', guests: 2 },
                     { key: 'dessert_offered', name: 'Dessert offered', dot: 'purple', target: null },
                     { key: 'dessert_served', name: 'Dessert served', dot: 'purple', target: 600, from: 'dessert_offered' },
-                    { key: 'dessert_finished', name: 'Dessert finished', dot: 'gray', target: null },
-                    { key: 'dessert_cleared', name: 'Dessert cleared', dot: 'red', target: 300, from: 'dessert_finished' },
                     { key: 'coffee_offered', name: 'Coffee/tea offered', dot: 'purple', target: null },
                     { key: 'coffee_served', name: 'Coffee/tea served', dot: 'purple', target: 300, from: 'coffee_offered' },
                     { key: 'bill_requested', name: 'Bill requested', dot: 'purple', target: null },
@@ -1200,13 +1196,14 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     
-    // Better settings for continuous note-taking
-    recognition.continuous = true; // Keep listening
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
     recognition.maxAlternatives = 1;
 
     let recordingTimer = null;
+    let accumulatedText = ''; // Store accumulated text separately
+    let lastProcessedIndex = 0; // Track what we've already processed
 
     recognition.onstart = () => {
         isRecording = true;
@@ -1214,7 +1211,10 @@
         voiceBtn.textContent = '⏹️';
         voiceStatus.textContent = 'Recording... Tap to stop';
         
-        // Auto-stop after 60 seconds
+        // Get existing text when starting
+        accumulatedText = voiceTranscription.textContent || '';
+        lastProcessedIndex = 0; // Reset for new recording session
+        
         recordingTimer = setTimeout(() => {
             if (isRecording) {
                 stopRecording();
@@ -1223,38 +1223,42 @@
     };
 
     recognition.onresult = (event) => {
-        let interimTranscript = '';
-        let newFinalTranscript = '';
+        let currentInterim = '';
+        let newFinalText = '';
         
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        // Only process NEW results since lastProcessedIndex
+        for (let i = lastProcessedIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-                newFinalTranscript += transcript + ' ';
+                newFinalText += transcript + ' ';
+                lastProcessedIndex = i + 1; // Update processed index
             } else {
-                interimTranscript += transcript;
+                currentInterim += transcript;
             }
         }
         
-        // ADD to existing transcript instead of replacing
-        if (newFinalTranscript) {
-            sessionData.voiceTranscript = (sessionData.voiceTranscript || '') + newFinalTranscript;
+        // Add only NEW final text to accumulated text
+        if (newFinalText.trim()) {
+            accumulatedText += newFinalText;
+            sessionData.voiceTranscript = accumulatedText;
         }
         
-        // Display accumulated transcript plus current interim
-        const displayText = (sessionData.voiceTranscript || '') + interimTranscript;
+        // Display accumulated + current interim
+        const displayText = accumulatedText + currentInterim;
         voiceTranscription.textContent = displayText;
+        
         if (displayText.trim()) {
             voiceTranscription.classList.add('visible');
         }
     };
 
     recognition.onend = () => {
-        // Only end if we manually stopped, otherwise restart
         if (isRecording) {
+            // Reset index for restart
+            lastProcessedIndex = 0;
             try {
-                recognition.start(); // Restart to keep listening
+                recognition.start();
             } catch (error) {
-                console.log('Recognition ended');
                 finishRecording();
             }
         } else {
@@ -1266,24 +1270,22 @@
         console.error('Speech recognition error:', event.error);
         
         if (event.error === 'not-allowed') {
-            voiceStatus.textContent = 'Microphone access denied. Check browser permissions.';
+            voiceStatus.textContent = 'Microphone access denied.';
             finishRecording();
         } else if (event.error === 'aborted') {
-            // Normal stop, don't show error
             finishRecording();
-        } else {
-            // Try to restart unless manually stopped
-            if (isRecording) {
-                setTimeout(() => {
-                    if (isRecording) {
-                        try {
-                            recognition.start();
-                        } catch (e) {
-                            finishRecording();
-                        }
+        } else if (isRecording && event.error !== 'no-speech') {
+            // Restart on most errors, but reset index
+            lastProcessedIndex = 0;
+            setTimeout(() => {
+                if (isRecording) {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        finishRecording();
                     }
-                }, 1000);
-            }
+                }
+            }, 1000);
         }
     };
 
@@ -1297,10 +1299,15 @@
             recordingTimer = null;
         }
         
-        if (sessionData.voiceTranscript && sessionData.voiceTranscript.trim()) {
-            voiceStatus.textContent = `Voice note saved. Tap to add more.`;
+        // Save final accumulated text
+        sessionData.voiceTranscript = accumulatedText;
+        voiceTranscription.textContent = accumulatedText;
+        
+        const wordCount = accumulatedText.trim().split(/\s+/).length;
+        if (accumulatedText.trim()) {
+            voiceStatus.textContent = `Voice note saved (${wordCount} words). Tap to add more.`;
         } else {
-            voiceStatus.textContent = 'No speech detected. Tap to try again.';
+            voiceStatus.textContent = 'Tap to record voice notes';
         }
     }
 
@@ -1325,16 +1332,11 @@
 
     function stopRecording() {
         if (recognition && isRecording) {
-            isRecording = false; // Set this first to prevent restart
+            isRecording = false;
             recognition.stop();
         }
     }
 }
-
-        function confirmReset() {
-            document.getElementById('popupOverlay').style.display = 'block';
-            document.getElementById('confirmDialog').style.display = 'block';
-        }
 
         function closeConfirm() {
             document.getElementById('popupOverlay').style.display = 'none';
