@@ -953,43 +953,46 @@
             document.getElementById('elapsedTime').textContent = 
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
-
-        function confirmReset() {
+function confirmReset() {
     document.getElementById('popupOverlay').style.display = 'block';
     document.getElementById('confirmDialog').style.display = 'block';
 }
 
-            setupBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const guests = btn.dataset.guests;
-                    const service = btn.dataset.service;
-                    const location = btn.dataset.location;
+function setupServiceType() {
+    const setupBtns = document.querySelectorAll('.setup-btn');
+    const startBtn = document.getElementById('startServiceBtn');
 
-                    if (guests) {
-                        document.querySelectorAll('[data-guests]').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        sessionData.config.guests = parseInt(guests);
-                    }
+    setupBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const guests = btn.dataset.guests;
+            const service = btn.dataset.service;
+            const location = btn.dataset.location;
 
-                    if (service) {
-                        document.querySelectorAll('[data-service]').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        sessionData.config.service = service;
-                    }
+            if (guests) {
+                document.querySelectorAll('[data-guests]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                sessionData.config.guests = parseInt(guests);
+            }
 
-                    if (location) {
-                        document.querySelectorAll('[data-location]').forEach(b => b.classList.remove('selected'));
-                        btn.classList.add('selected');
-                        sessionData.config.location = location;
-                    }
+            if (service) {
+                document.querySelectorAll('[data-service]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                sessionData.config.service = service;
+            }
 
-                    // Enable start button if all config is set
-                    startBtn.disabled = !(sessionData.config.guests && sessionData.config.service && sessionData.config.location);
-                });
-            });
+            if (location) {
+                document.querySelectorAll('[data-location]').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                sessionData.config.location = location;
+            }
 
-            startBtn.addEventListener('click', startService);
-        }
+            // Enable start button if all config is set
+            startBtn.disabled = !(sessionData.config.guests && sessionData.config.service && sessionData.config.location);
+        });
+    });
+
+    startBtn.addEventListener('click', startService);
+}
 
         function startService() {
             sessionData.startTime = new Date();
