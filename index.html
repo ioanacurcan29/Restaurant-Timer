@@ -954,9 +954,10 @@
                 `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function setupServiceType() {
-            const setupBtns = document.querySelectorAll('.setup-btn');
-            const startBtn = document.getElementById('startServiceBtn');
+        function confirmReset() {
+    document.getElementById('popupOverlay').style.display = 'block';
+    document.getElementById('confirmDialog').style.display = 'block';
+}
 
             setupBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
