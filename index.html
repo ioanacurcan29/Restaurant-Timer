@@ -828,8 +828,10 @@
                     { key: 'order_taken', name: 'Food & beverage order taken', dot: 'orange', target: 300, from: 'menu_presented' },
                     { key: 'drinks_served', name: 'Drinks served', dot: 'blue', target: 300, from: 'order_taken' },
                     { key: 'cocktails_served', name: 'Cocktails served', dot: 'blue', target: 480, from: 'order_taken' },
-                    { key: 'food_served', name: 'Food served', dot: 'orange', target: 900, from: 'order_taken' }, // 1200 for beach/poolside
+                    { key: 'food_served', name: 'Food served', dot: 'orange', target: 900, from: 'order_taken' },
                     { key: 'condiments_offered', name: 'Condiments offered', dot: 'orange', target: null },
+                    { key: 'food_finished', name: 'Food finished', dot: 'gray', target: null },
+                    { key: 'food_cleared', name: 'Food cleared', dot: 'red', target: 300, from: 'food_finished' },
                     { key: 'glass_empty_g1', name: 'G1 glass empty', dot: 'gray', target: null },
                     { key: 'glass_empty_g2', name: 'G2 glass empty', dot: 'gray', target: null, guests: 2 },
                     { key: 'additional_offered_g1', name: 'G1 additional beverage offered', dot: 'blue', target: 120, from: 'glass_empty_g1' }, // 300 for beach/poolside
