@@ -10,6 +10,15 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    .app-footer {
+    text-align: center;
+    padding: 15px 20px;
+    font-size: 12px;
+    color: #666;
+    border-top: 1px solid #e5e5ea;
+    background: #fafafa;
+    margin-top: 10px;
+}
     <style>
         * {
             margin: 0;
@@ -832,6 +841,13 @@
         <div class="popup-buttons">
             <button class="popup-btn cancel" onclick="closeConfirm()">Cancel</button>
             <button class="popup-btn confirm" onclick="resetService()">Reset</button>
+        </div>
+        <div class="export-section" id="exportSection">
+            <button class="export-btn" onclick="exportReport()">📤 Export Report</button>
+        </div>
+        
+        <div class="app-footer">
+            Developed by Ioana Curcan - based on LQA Service Standards
         </div>
     </div>
 
