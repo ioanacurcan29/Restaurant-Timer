@@ -1183,6 +1183,11 @@ function setupServiceType() {
             // Add event listeners
             addStepListeners();
             addExperienceListeners();
+            // Auto-save notes
+    document.getElementById('noteInput').addEventListener('input', function() {
+    sessionData.notes = this.value;
+    saveSessionData();
+});
             setupVoiceRecording();
         }
 
@@ -1352,6 +1357,7 @@ function setupServiceType() {
                     // Store rating
                     sessionData.experienceRating = parseInt(btn.dataset.rating);
                     sessionData.experienceFeeling = btn.dataset.feeling;
+                    saveSessionData();
                     
                     // Update display
                     const ratingDisplay = document.getElementById('selectedRating');
