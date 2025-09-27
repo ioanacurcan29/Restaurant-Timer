@@ -869,6 +869,48 @@
         let audioChunks = [];
         let recordingStartTime = null
         let isRecording = false;
+        // Data persistence functions
+function saveSessionData() {
+    try {
+        localStorage.setItem('serviceMonitor_currentSession', JSON.stringify(sessionData));
+    } catch (error) {
+        console.error('Error saving data:', error);
+    }
+}
+
+function loadSessionData() {
+    try {
+        const saved = localStorage.getItem('serviceMonitor_currentSession');
+        if (saved) {
+            const parsedData = JSON.parse(saved);
+            // Convert string dates back to Date objects
+            if (parsedData.startTime) parsedData.startTime = new Date(parsedData.startTime);
+            if (parsedData.endTime) parsedData.endTime = new Date(parsedData.endTime);
+            Object.keys(parsedData.timings).forEach(key => {
+                parsedData.timings[key] = new Date(parsedData.timings[key]);
+            });
+            return parsedData;
+        }
+    } catch (error) {
+        console.error('Error loading data:', error);
+    }
+    return null;
+}
+
+function saveSessionHistory() {
+    try {
+        const history = JSON.parse(localStorage.getItem('serviceMonitor_history') || '[]');
+        const sessionCopy = JSON.parse(JSON.stringify(sessionData));
+        sessionCopy.id = Date.now();
+        sessionCopy.savedAt = new Date();
+        history.push(sessionCopy);
+        // Keep only last 50 sessions
+        if (history.length > 50) history.shift();
+        localStorage.setItem('serviceMonitor_history', JSON.stringify(history));
+    } catch (error) {
+        console.error('Error saving history:', error);
+    }
+}
 
         // Service configurations
         const serviceConfigs = {
