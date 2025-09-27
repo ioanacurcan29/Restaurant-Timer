@@ -1656,6 +1656,46 @@ function setupServiceType() {
                     .catch(error => console.log('SW registration failed'));
             });
         }
+        // Menu functionality
+document.getElementById('menuBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('dropdownMenu');
+    menu.classList.toggle('show');
+});
+
+// Close menu when clicking outside
+document.addEventListener('click', function() {
+    document.getElementById('dropdownMenu').classList.remove('show');
+});
+
+// Refresh function
+function refreshApp() {
+    // Clear any cached data
+    if ('caches' in window) {
+        caches.keys().then(function(cacheNames) {
+            cacheNames.forEach(function(cacheName) {
+                caches.delete(cacheName);
+            });
+        });
+    }
+    
+    // Unregister service worker and reload
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+            }
+            // Force reload after unregistering
+            window.location.reload(true);
+        });
+    } else {
+        window.location.reload(true);
+    }
+}
+
+function showAbout() {
+    alert('Service Quality Monitor v2.0\nTap the refresh button to get the latest updates.');
+}
     </script>
 </body>
 </html> 
